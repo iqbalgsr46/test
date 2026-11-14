@@ -1,8 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import type { IScannerControls } from '@zxing/browser';
+import type { BrowserQRCodeReader } from '@zxing/browser';
 import { validateImage } from './qr-validation';
+
+interface DetectedBarcode {
+  rawValue: string;
+}
+
+interface NativeBarcodeDetector {
+  detect: (source: ImageBitmapSource) => Promise<DetectedBarcode[]>;
+}
+
+interface BarcodeDetectorConstructor {
+  new (options?: { formats: string[] }): NativeBarcodeDetector;
+}
+
+interface WindowWithBarcodeDetector extends Window {
+  BarcodeDetector?: BarcodeDetectorConstructor;
+}
 
 interface QrScannerProps {
   onDecoded: (value: string) => void;
@@ -18,120 +34,234 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
   const [cameraActive, setCameraActive] = useState(true);
   const [cameraError, setCameraError] = useState('');
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(undefined);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [isAutoplayBlocked, setIsAutoplayBlocked] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [manualError, setManualError] = useState('');
 
   const video = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const callback = useRef(onDecoded);
 
   useEffect(() => {
     callback.current = onDecoded;
   }, [onDecoded]);
 
-  // Enumerate video devices and strictly prioritize rear/back camera on mobile devices
-  useEffect(() => {
-    async function findBackCamera() {
+  // Acquire media stream with progressive fallbacks (prioritizing mobile rear camera)
+  async function acquireCameraStream(preferredFacing: 'environment' | 'user'): Promise<MediaStream> {
+    const attempts: MediaStreamConstraints[] = [
+      // Attempt 1: Standard W3C rear/back camera with 720p ideal (optimal for mobile QR)
+      {
+        video: {
+          facingMode: { ideal: preferredFacing },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      },
+      // Attempt 2: Simple facingMode constraint
+      {
+        video: {
+          facingMode: preferredFacing,
+        },
+        audio: false,
+      },
+      // Attempt 3: Strict exact facingMode
+      {
+        video: {
+          facingMode: { exact: preferredFacing },
+        },
+        audio: false,
+      },
+      // Attempt 4: Any available video stream
+      {
+        video: true,
+        audio: false,
+      },
+    ];
+
+    let lastError: unknown;
+    for (const constraints of attempts) {
       try {
-        if (!navigator.mediaDevices?.enumerateDevices) return;
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoInputs = devices.filter((d) => d.kind === 'videoinput');
-
-        if (videoInputs.length > 1) {
-          setHasMultipleCameras(true);
-
-          // Find back/rear camera specifically
-          const backCam = videoInputs.find((d) =>
-            /back|rear|environment|belakang|main/i.test(d.label),
-          );
-
-          if (backCam) {
-            setSelectedDeviceId(backCam.deviceId);
-          } else {
-            // On Android/iOS, the rear camera is usually listed last
-            setSelectedDeviceId(videoInputs[videoInputs.length - 1].deviceId);
-          }
-        } else if (videoInputs.length === 1) {
-          setSelectedDeviceId(videoInputs[0].deviceId);
-        }
-      } catch {
-        // ignore device listing error
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        return stream;
+      } catch (err) {
+        lastError = err;
       }
     }
-    void findBackCamera();
-  }, []);
+    throw lastError;
+  }
 
-  // Continuous Camera Scanning with strict Rear/Back Camera Priority
+  // Camera Lifecycle & Scanning Loop
   useEffect(() => {
     if (!cameraActive) return;
     const videoElement = video.current;
     let disposed = false;
-    let controls: IScannerControls | undefined;
+    let animationFrameId: number | null = null;
+    let zxingReader: BrowserQRCodeReader | null = null;
+    let barcodeDetector: NativeBarcodeDetector | null = null;
+
+    function stopTracks() {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      if (videoElement) {
+        videoElement.srcObject = null;
+      }
+    }
 
     async function startCamera() {
       setCameraError('');
+      setIsAutoplayBlocked(false);
+
       try {
         if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error('Perangkat atau browser tidak mendukung akses kamera.');
+          throw new Error('Perangkat atau browser ini tidak mendukung akses kamera.');
         }
 
-        const { BrowserQRCodeReader } = await import('@zxing/browser');
-        if (disposed || !videoElement) return;
+        // 1. Acquire MediaStream
+        const stream = await acquireCameraStream(facingMode);
+        if (disposed) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
 
-        const reader = new BrowserQRCodeReader();
+        streamRef.current = stream;
 
-        // Build constraints: prioritize exact deviceId or environment (rear/back camera)
-        const constraints: MediaStreamConstraints = selectedDeviceId
-          ? { video: { deviceId: { exact: selectedDeviceId } }, audio: false }
-          : {
-              video: {
-                facingMode: { ideal: facingMode },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 },
-              },
-              audio: false,
-            };
+        // 2. Attach Stream to Video Element with mobile-safe attributes
+        if (videoElement) {
+          videoElement.srcObject = stream;
+          videoElement.playsInline = true;
+          videoElement.muted = true;
+          videoElement.setAttribute('playsinline', 'true');
+          videoElement.setAttribute('webkit-playsinline', 'true');
 
+          try {
+            await videoElement.play();
+          } catch {
+            // Mobile browser prevented autoplay without prior gesture
+            setIsAutoplayBlocked(true);
+          }
+        }
+
+        // 3. Check for multiple camera devices safely after stream is granted
         try {
-          controls = await reader.decodeFromConstraints(
-            constraints,
-            videoElement,
-            (result, _error, activeControls) => {
-              if (result && !disposed) {
-                activeControls.stop();
-                setCameraActive(false);
-                callback.current(result.getText());
-              }
-            },
-          );
+          if (navigator.mediaDevices?.enumerateDevices) {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoInputs = devices.filter((d) => d.kind === 'videoinput');
+            if (videoInputs.length > 1) {
+              setHasMultipleCameras(true);
+            }
+          }
         } catch {
-          // Fallback to generic rear camera constraint if deviceId fails
-          if (disposed) return;
-          controls = await reader.decodeFromConstraints(
-            { video: { facingMode: { ideal: 'environment' } }, audio: false },
-            videoElement,
-            (result, _error, activeControls) => {
-              if (result && !disposed) {
-                activeControls.stop();
-                setCameraActive(false);
-                callback.current(result.getText());
-              }
-            },
-          );
+          // ignore device listing error
         }
 
-        if (disposed) controls?.stop();
+        // 4. Initialize Scanner Engine
+        // Fast path: Native BarcodeDetector (Chrome Android hardware accelerated)
+        if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+          try {
+            const win = window as unknown as WindowWithBarcodeDetector;
+            if (win.BarcodeDetector) {
+              barcodeDetector = new win.BarcodeDetector({ formats: ['qr_code'] });
+            }
+          } catch {
+            barcodeDetector = null;
+          }
+        }
+
+        // Offscreen canvas for ZXing fallback
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        let scanning = true;
+        let lastScanTime = 0;
+
+        async function scanLoop() {
+          if (!scanning || disposed || !cameraActive) return;
+
+          const now = performance.now();
+          // Scan every ~160ms for silky smooth UI and battery efficiency
+          if (
+            now - lastScanTime >= 160 &&
+            videoElement &&
+            videoElement.readyState >= 2 &&
+            !videoElement.paused
+          ) {
+            lastScanTime = now;
+
+            // Step A: Native BarcodeDetector
+            if (barcodeDetector) {
+              try {
+                const barcodes = await barcodeDetector.detect(videoElement);
+                if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                  const raw = barcodes[0].rawValue.trim();
+                  if (raw) {
+                    scanning = false;
+                    stopTracks();
+                    setCameraActive(false);
+                    callback.current(raw);
+                    return;
+                  }
+                }
+              } catch {
+                // fall through to ZXing
+              }
+            }
+
+            // Step B: ZXing BrowserQRCodeReader
+            if (scanning && !disposed) {
+              try {
+                if (!zxingReader) {
+                  const { BrowserQRCodeReader } = await import('@zxing/browser');
+                  zxingReader = new BrowserQRCodeReader();
+                }
+
+                const width = videoElement.videoWidth || 640;
+                const height = videoElement.videoHeight || 480;
+                canvas.width = Math.min(width, 720);
+                canvas.height = Math.min(height, 720);
+
+                if (ctx) {
+                  ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                  const result = zxingReader.decodeFromCanvas(canvas);
+                  if (result && result.getText()) {
+                    const text = result.getText().trim();
+                    if (text) {
+                      scanning = false;
+                      stopTracks();
+                      setCameraActive(false);
+                      callback.current(text);
+                      return;
+                    }
+                  }
+                }
+              } catch {
+                // NotFoundException: keep scanning
+              }
+            }
+          }
+
+          if (scanning && !disposed) {
+            animationFrameId = requestAnimationFrame(scanLoop);
+          }
+        }
+
+        animationFrameId = requestAnimationFrame(scanLoop);
       } catch (e) {
         if (!disposed) {
+          const isDenied =
+            e instanceof DOMException &&
+            (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError');
           setCameraError(
-            e instanceof DOMException && e.name === 'NotAllowedError'
-              ? 'Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser Anda.'
+            isDenied
+              ? 'Izin kamera ditolak. Silakan izinkan akses kamera di ikon gembok/pengaturan browser Anda.'
               : e instanceof Error
                 ? e.message
-                : 'Kamera belakang tidak dapat diakses.',
+                : 'Kamera belakang tidak dapat diakses atau sedang digunakan oleh aplikasi lain.',
           );
         }
       }
@@ -141,13 +271,25 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
 
     return () => {
       disposed = true;
-      controls?.stop();
-      const stream = videoElement?.srcObject;
-      if (stream instanceof MediaStream) {
-        stream.getTracks().forEach((track) => track.stop());
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
       }
+      stopTracks();
     };
-  }, [cameraActive, facingMode, selectedDeviceId]);
+  }, [cameraActive, facingMode]);
+
+  async function handleResumePlay() {
+    if (video.current) {
+      try {
+        await video.current.play();
+        setIsAutoplayBlocked(false);
+      } catch {
+        // retry camera initialization
+        setCameraActive(false);
+        setTimeout(() => setCameraActive(true), 100);
+      }
+    }
+  }
 
   async function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -192,12 +334,14 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
   }
 
   function toggleCameraFlip() {
-    setSelectedDeviceId(undefined);
     setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
   }
 
   return (
-    <div className="relative flex min-h-dvh w-full flex-col items-center justify-between overflow-hidden bg-slate-950">
+    <div
+      onClick={handleResumePlay}
+      className="relative flex min-h-dvh w-full flex-col items-center justify-between overflow-hidden bg-slate-950"
+    >
       {/* Background Live Video Feed (Clean Full-Screen) */}
       <video
         ref={video}
@@ -258,6 +402,23 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
           </div>
         </div>
 
+        {/* Autoplay Blocked Banner */}
+        {isAutoplayBlocked && !cameraError && (
+          <div className="mt-4 rounded-xl border border-sky-400/50 bg-slate-900/90 p-4 text-center text-xs text-sky-200 shadow-xl backdrop-blur-md animate-fade-in">
+            <p className="font-bold text-white">Ketuk Layar untuk Membuka Kamera</p>
+            <p className="mt-1 text-[11px] text-slate-300">
+              Browser HP memerlukan sentuhan layar untuk memulai siaran video kamera.
+            </p>
+            <button
+              type="button"
+              onClick={handleResumePlay}
+              className="mt-3 rounded-lg bg-sky-600 px-5 py-2 text-xs font-bold text-white shadow-md transition hover:bg-sky-500"
+            >
+              Aktifkan Kamera Sekarang
+            </button>
+          </div>
+        )}
+
         {/* Camera Error / Permission Fallback */}
         {cameraError && (
           <div className="mt-4 max-w-sm rounded-xl border border-rose-500/40 bg-slate-900/90 p-4 text-center text-xs text-rose-200 shadow-xl backdrop-blur-md">
@@ -266,7 +427,10 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
             <div className="mt-3 flex justify-center gap-2">
               <button
                 type="button"
-                onClick={() => setCameraActive(true)}
+                onClick={() => {
+                  setCameraActive(false);
+                  setTimeout(() => setCameraActive(true), 100);
+                }}
                 className="rounded-lg bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-sky-500"
               >
                 Coba Lagi
