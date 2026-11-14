@@ -52,9 +52,9 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
   // Confirm vote with "Pilih"
   await page.getByRole('button', { name: 'Pilih', exact: true }).click();
 
-  // 3. Success / Print QR Receipt screen
+  // 3. Success / Thank You screen (Full screen, no QR code)
   await expect(page.getByRole('heading', { name: 'Terima Kasih Telah Memilih' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Cetak Print Out QR/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Selesai/i })).toBeVisible();
 
   // Verify storage
   const stored = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)!), key);

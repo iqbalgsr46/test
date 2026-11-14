@@ -8,7 +8,6 @@ import { CANDIDATES, ELECTION } from '@/features/election/data';
 import { findVoterByQr } from '@/features/election/engine';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
-import { Receipt } from '@/features/documents/receipt';
 import { QrScanner } from './qr-scanner';
 
 export function Ballot() {
@@ -174,104 +173,65 @@ export function Ballot() {
             </div>
           </div>
         ) : voter && isVoted ? (
-          /* ================= SCREEN 4: PRINT OUT QR BUKTI TELAH MEMILIH ================= */
-          <div className="flex min-h-dvh flex-col items-center justify-center bg-[#f4f7f2] px-4 py-10 text-[#1a2e21] animate-fade-in">
-            <div className="w-full max-w-xl">
-              {/* Header Box */}
-              <div className="mb-6 rounded-2xl border border-[#cde0cb] bg-[#eef7ec] p-6 text-center shadow-xs">
-                <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-[#245443] shadow-md">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="size-7 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-xs font-bold tracking-widest text-[#245443] uppercase">
-                  SUARA BERHASIL DISIMPAN
-                </p>
-                <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#163a2a] sm:text-3xl">
-                  Terima Kasih Telah Memilih
-                </h1>
-                <p className="mt-2 text-xs leading-relaxed text-[#3a5845] sm:text-sm">
-                  Hak suara pemilih atas nama <strong className="font-semibold">{voter.name}</strong> telah
-                  tercatat ke dalam sistem secara anonim dan aman.
-                </p>
-              </div>
+          /* ================= SCREEN 4: HALAMAN TERIMA KASIH (FULL SCREEN, TANPA QR CODE) ================= */
+          <div className="h-dvh max-h-dvh w-full overflow-hidden flex flex-col items-center justify-between bg-[#f4f8f3] p-4 sm:p-6 text-[#143024] select-none animate-fade-in">
+            {/* Top Emblem */}
+            <div className="shrink-0 flex items-center gap-2 pt-1">
+              <span className="flex size-6 sm:size-7 items-center justify-center rounded-full bg-[#183e30] font-serif text-[10px] sm:text-xs font-bold text-[#e5d4a4]">
+                ct
+              </span>
+              <span className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#183e30]">
+                PILKADES {ELECTION.village.toUpperCase()} · {ELECTION.tps}
+              </span>
+            </div>
 
-              {/* Receipt Component */}
-              <div className="my-6">
-                {voter.receiptId && <Receipt receiptId={voter.receiptId} />}
-              </div>
-
-              {/* Actions */}
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <Button
-                  variant="primary"
-                  onClick={() => window.print()}
-                  className="flex items-center gap-2 bg-[#183e30] px-6 text-white hover:bg-[#102d23]"
+            {/* Center Content Box (Responsive to phone & tablet landscape) */}
+            <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center max-w-xl mx-auto px-4 my-auto">
+              {/* Checkmark Icon Badge */}
+              <div className="mb-2 sm:mb-4 flex size-12 sm:size-16 items-center justify-center rounded-full bg-[#245443] shadow-lg text-white">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="size-6 sm:size-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="size-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                    />
-                  </svg>
-                  <span>Cetak Print Out QR</span>
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={exit}
-                  className="border-[#b9c8b8] bg-white text-[#203628] hover:bg-[#f3f7f1]"
-                >
-                  Selesai / Pemilih Berikutnya ({countdown}s)
-                </Button>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
               </div>
 
-              {/* Physical Guidance (Di Luar Sistem Website) */}
-              <div className="mt-8 rounded-xl border border-[#d6dfd2] bg-white p-5 sm:p-6 shadow-xs">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#2d4838]">
-                  Tahap Akhir Pemilihan (Alur Di Luar Sistem):
-                </h3>
-                <ol className="mt-3.5 space-y-3 text-xs text-[#3a4e3e]">
-                  <li className="flex items-start gap-2.5">
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#245443] text-[10px] font-bold text-white">
-                      1
-                    </span>
-                    <span>
-                      Masukkan kertas print out bukti QR ini ke dalam kotak suara fisik.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#245443] text-[10px] font-bold text-white">
-                      2
-                    </span>
-                    <span>
-                      Serahkan kembali surat undangan pemilih Anda kepada petugas KPPS.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#245443] text-[10px] font-bold text-white">
-                      3
-                    </span>
-                    <span>
-                      Celupkan salah satu jari tangan Anda ke dalam botol tinta sebagai tanda telah memilih.
-                    </span>
-                  </li>
-                </ol>
+              {/* Status Tag */}
+              <span className="inline-block rounded-full bg-[#e0f0dd] px-3.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold tracking-wider uppercase text-[#1c5630]">
+                Suara Berhasil Disimpan
+              </span>
+
+              {/* Main Title */}
+              <h1 className="mt-1.5 sm:mt-2 text-lg sm:text-3xl font-extrabold tracking-tight text-[#143024]">
+                Terima Kasih Telah Memilih
+              </h1>
+
+              {/* Subtitle / Voter acknowledgment */}
+              <p className="mt-1.5 sm:mt-2 text-[11px] sm:text-sm text-[#3b5344] leading-relaxed max-w-md">
+                Hak suara pemilih atas nama <strong className="font-bold text-[#143024]">{voter.name}</strong> telah
+                tercatat secara sah ke dalam sistem secara Langsung, Umum, Bebas, dan Rahasia (LUBER).
+              </p>
+
+              {/* Physical Offline Instruction */}
+              <div className="mt-3 sm:mt-4 rounded-xl border border-[#cde0cb] bg-[#eef7ec] px-4 py-2 text-[10px] sm:text-xs text-[#294c34] leading-relaxed max-w-md">
+                Tahap akhir: Silakan keluar dari bilik suara dan celupkan salah satu jari tangan Anda ke dalam tinta pemilu pada meja petugas.
               </div>
+            </div>
+
+            {/* Bottom Button (Auto countdown & button) */}
+            <div className="shrink-0 w-full max-w-md pb-2 text-center">
+              <Button
+                variant="primary"
+                onClick={exit}
+                className="w-full bg-[#183e30] py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-base font-bold text-white shadow-md hover:bg-[#102d23] active:scale-[0.99]"
+              >
+                Selesai / Pemilih Berikutnya ({countdown}s)
+              </Button>
             </div>
           </div>
         ) : !voter ? (
