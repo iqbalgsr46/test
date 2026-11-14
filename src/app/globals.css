@@ -340,31 +340,6 @@ a {
   }
 }
 
-@keyframes full-scan-laser {
-  0% {
-    top: 2%;
-    opacity: 0.6;
-  }
-  50% {
-    top: 96%;
-    opacity: 1;
-  }
-  100% {
-    top: 2%;
-    opacity: 0.6;
-  }
-}
-
-.full-scanner-laser {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent 0%, #38bdf8 15%, #60a5fa 50%, #38bdf8 85%, transparent 100%);
-  box-shadow: 0 0 20px #38bdf8, 0 0 8px #93c5fd;
-  animation: full-scan-laser 2.6s ease-in-out infinite;
-}
-
 @keyframes phone-rotate {
   0%, 25% {
     transform: rotate(0deg);

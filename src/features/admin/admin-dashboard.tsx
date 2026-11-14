@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Notice } from '@/components/ui/notice';
 import { BahpDialog } from './bahp-dialog';
+import { QrCatalogDialog } from './qr-catalog-dialog';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -20,6 +21,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [search, setSearch] = useState('');
   const [resetOpen, setResetOpen] = useState(false);
   const [bahpOpen, setBahpOpen] = useState(false);
+  const [qrCatalogOpen, setQrCatalogOpen] = useState(false);
+  const [selectedVoterIdForQr, setSelectedVoterIdForQr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
 
@@ -185,8 +188,32 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
               <div className="flex flex-wrap gap-2.5">
                 <Button
-                  onClick={() => setBahpOpen(true)}
+                  onClick={() => {
+                    setSelectedVoterIdForQr(null);
+                    setQrCatalogOpen(true);
+                  }}
                   className="flex items-center gap-2 bg-[#183e30] text-xs font-bold text-white hover:bg-[#102d23]"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="size-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  <span>Unduh Kode QR Pemilih</span>
+                </Button>
+                <Button
+                  onClick={() => setBahpOpen(true)}
+                  variant="secondary"
+                  className="flex items-center gap-2 border-[#cfdacd] bg-white text-xs font-bold text-[#183e30] hover:bg-[#edf5eb]"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -505,28 +532,55 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                               {timeStr}
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <Link
-                                href={`/cetak/undangan/${voter.id}`}
-                                target="_blank"
-                                className="inline-flex items-center gap-1.5 rounded-md border border-[#c5d5c3] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#245443] transition hover:bg-[#edf5eb]"
-                                title="Cetak Surat Undangan ber-QR untuk warga ini"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="size-3.5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedVoterIdForQr(voter.id);
+                                    setQrCatalogOpen(true);
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded-md border border-[#c5d5c3] bg-[#f8faf7] px-2 py-1 text-[11px] font-bold text-[#183e30] transition hover:bg-[#edf5eb]"
+                                  title="Lihat & unduh gambar QR PNG"
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                                  />
-                                </svg>
-                                <span>Cetak Undangan</span>
-                              </Link>
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="size-3"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                    />
+                                  </svg>
+                                  <span>Unduh QR</span>
+                                </button>
+                                <Link
+                                  href={`/cetak/undangan/${voter.id}`}
+                                  target="_blank"
+                                  className="inline-flex items-center gap-1 rounded-md border border-[#c5d5c3] bg-white px-2 py-1 text-[11px] font-semibold text-[#245443] transition hover:bg-[#edf5eb]"
+                                  title="Cetak Surat Undangan ber-QR untuk warga ini"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="size-3"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                                    />
+                                  </svg>
+                                  <span>Surat A4</span>
+                                </Link>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -582,6 +636,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       {/* BAHP Dialog */}
       <BahpDialog open={bahpOpen} onClose={() => setBahpOpen(false)} state={state} />
+
+      {/* QR Catalog & Download Dialog */}
+      <QrCatalogDialog
+        open={qrCatalogOpen}
+        onClose={() => setQrCatalogOpen(false)}
+        voters={state.voters}
+        initialVoterId={selectedVoterIdForQr}
+      />
 
       {/* Reset Confirmation Dialog */}
       <Dialog

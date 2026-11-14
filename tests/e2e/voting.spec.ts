@@ -12,12 +12,8 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
 
   await page.goto('/');
 
-  // 1. Full Camera Scan QR screen (Cloning Image 2)
-  await expect(
-    page.getByText('Arahkan kamera belakang ke kode QR pada surat undangan'),
-  ).toBeVisible();
-  await expect(page.getByText('Letakkan QR code di dalam frame')).toBeVisible();
-  await expect(page.getByText('Siap untuk scan (Kamera Belakang)')).toBeVisible();
+  // 1. Full Camera Scan QR screen (Cloning Image 2: pure white, clean, no text)
+  await expect(page.locator('video')).toBeVisible();
 
   // Open manual/simulation drawer
   await page.getByRole('button', { name: /Input Kode/i }).click();
@@ -67,9 +63,7 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
 
   // 4. Try scanning the same QR again -> rejected
   await page.getByRole('button', { name: /Selesai/i }).click();
-  await expect(
-    page.getByText('Arahkan kamera belakang ke kode QR pada surat undangan'),
-  ).toBeVisible();
+  await expect(page.locator('video')).toBeVisible();
 
   await page.getByRole('button', { name: /Input Kode/i }).click();
   await page.getByPlaceholder('CT26-XXXXXX').fill(encodeInvitation(voter));
@@ -94,6 +88,12 @@ test('admin flow: login -> dashboard data hasil pemilihan', async ({ page }) => 
   await expect(page.getByText('SUARA MASUK', { exact: true })).toBeVisible();
   await expect(page.getByText('Hasil Perolehan Suara Calon Kuwu')).toBeVisible();
   await expect(page.getByText('Data Pemilih & Status Hak Suara')).toBeVisible();
+
+  // Open QR Catalog Dialog
+  await page.getByRole('button', { name: /Unduh Kode QR/i }).click();
+  await expect(page.getByRole('dialog')).toContainText('Katalog & Unduh Kode QR Pemilih');
+  await page.getByRole('button', { name: 'Tutup' }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
 
   // Open BAHP Dialog
   await page.getByRole('button', { name: /Cetak Berita Acara/i }).click();
