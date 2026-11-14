@@ -114,45 +114,47 @@ export function Ballot() {
   }
 
   return (
-    <div className="relative min-h-dvh w-full overflow-x-hidden font-sans select-none">
-      {/* Discreet Top Navigation Bar for Admin & Identity */}
-      <header className="absolute top-0 right-0 left-0 z-40 flex items-center justify-between px-5 py-3 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 shadow-xs backdrop-blur-md">
-          <span className="flex size-6 items-center justify-center rounded-full bg-[#183e30] font-serif text-[11px] font-bold text-[#e5d4a4]">
-            ct
-          </span>
-          <span className="text-[11px] font-bold tracking-wider text-[#183e30]">
-            PILKADES {ELECTION.village.toUpperCase()}
-          </span>
-        </div>
+    <div className="relative h-dvh max-h-dvh w-full overflow-hidden font-sans select-none">
+      {/* Discreet Top Navigation Bar for Admin & Identity (Only on scan & completion) */}
+      {(!voter || isVoted) && (
+        <header className="absolute top-0 right-0 left-0 z-40 flex items-center justify-between px-5 py-3 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 shadow-xs backdrop-blur-md">
+            <span className="flex size-6 items-center justify-center rounded-full bg-[#183e30] font-serif text-[11px] font-bold text-[#e5d4a4]">
+              ct
+            </span>
+            <span className="text-[11px] font-bold tracking-wider text-[#183e30]">
+              PILKADES {ELECTION.village.toUpperCase()}
+            </span>
+          </div>
 
-        <div className="pointer-events-auto flex items-center gap-2">
-          <Link
-            href="/admin"
-            className="flex items-center gap-1.5 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 text-xs font-semibold text-[#183e30] shadow-xs backdrop-blur-md transition hover:bg-white"
-            title="Masuk ke Dashboard Admin"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="size-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+          <div className="pointer-events-auto flex items-center gap-2">
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 text-xs font-semibold text-[#183e30] shadow-xs backdrop-blur-md transition hover:bg-white"
+              title="Masuk ke Dashboard Admin"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-            <span>Admin</span>
-          </Link>
-        </div>
-      </header>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="size-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+              <span>Admin</span>
+            </Link>
+          </div>
+        </header>
+      )}
 
       {/* Main Container */}
-      <main className="min-h-dvh w-full">
+      <main className="h-dvh max-h-dvh w-full overflow-hidden">
         {!isLoaded ? (
           <div className="flex min-h-dvh items-center justify-center bg-slate-950">
             <div className="text-center">
@@ -283,15 +285,15 @@ export function Ballot() {
             )}
           </div>
         ) : (
-          /* ================= SCREEN 2: PILIH CALON KUWU (CLONING IMAGE 3) ================= */
-          <div className="flex min-h-dvh flex-col justify-between bg-[#dff0fa] px-4 pt-14 pb-6 text-[#142d3e] sm:px-8 animate-fade-in">
-            {/* Header Surat Suara (Matching Image 3) */}
-            <div className="mx-auto max-w-4xl text-center">
-              {/* Official Seal SVG Icon (No Emojis) */}
-              <div className="mx-auto mb-2 flex size-14 items-center justify-center rounded-full border-2 border-[#1c557c] bg-[#eef7fd] shadow-xs">
+          /* ================= SCREEN 2: PILIH CALON KUWU (CLONING IMAGE 3: FULL LAYAR ADAPTIF, TANPA SCROLL) ================= */
+          <div className="h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between bg-[#dff0fa] px-3 py-2 sm:px-6 sm:py-3 text-[#142d3e] select-none animate-fade-in">
+            {/* Header Surat Suara (Compact height for landscape screens) */}
+            <div className="shrink-0 mx-auto w-full max-w-4xl text-center pt-0.5 sm:pt-1">
+              {/* Official Seal SVG Icon */}
+              <div className="mx-auto mb-1 flex size-7 sm:size-9 items-center justify-center rounded-full border border-[#1c557c] bg-[#eef7fd] shadow-xs">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="size-7 text-[#1c557c]"
+                  className="size-4 sm:size-5 text-[#1c557c]"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -304,23 +306,19 @@ export function Ballot() {
                   />
                 </svg>
               </div>
-              <h1 className="font-serif text-lg font-black tracking-widest uppercase text-[#0d344d] sm:text-xl">
+              <h1 className="font-serif text-xs sm:text-base font-black tracking-widest uppercase text-[#0d344d] leading-tight">
                 SURAT SUARA
               </h1>
-              <h2 className="mt-0.5 text-xs font-bold uppercase tracking-wider text-[#184e72] sm:text-sm">
+              <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#184e72] leading-tight">
                 PEMILIHAN KUWU DESA {ELECTION.village.toUpperCase()}
               </h2>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#356586]">
-                KECAMATAN {ELECTION.district.toUpperCase()}
+              <p className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-[#356586] leading-tight">
+                KEC. {ELECTION.district.toUpperCase()} · KAB. {ELECTION.regency.toUpperCase()} · TAHUN 2026
               </p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#356586]">
-                KABUPATEN {ELECTION.regency.toUpperCase()}
-              </p>
-              <p className="text-[11px] font-bold text-[#1a4f73]">TAHUN 2026</p>
             </div>
 
-            {/* Candidate Row (Matching Image 3) */}
-            <div className="mx-auto my-6 flex w-full max-w-5xl flex-wrap items-center justify-center gap-5 sm:gap-8">
+            {/* Candidate Row (Matching Image 3, flexible height, fits viewport perfectly without scroll) */}
+            <div className="flex-1 min-h-0 w-full flex items-center justify-center gap-3 sm:gap-6 px-2 my-1 sm:my-2">
               {CANDIDATES.map((c) => {
                 const isSelected = candidateId === c.id;
                 return (
@@ -330,23 +328,23 @@ export function Ballot() {
                     aria-label={`Pilih Calon Nomor ${c.number} ${c.name}`}
                     aria-pressed={isSelected}
                     onClick={() => setCandidateId(c.id)}
-                    className={`group relative flex w-[230px] flex-col overflow-hidden rounded-xl border-4 bg-white shadow-md transition-all duration-150 sm:w-[260px] active:scale-[0.98] ${
+                    className={`group relative flex h-full max-h-[58dvh] w-auto aspect-[3/4] sm:aspect-[4/5] flex-col overflow-hidden rounded-xl border-3 sm:border-4 bg-white shadow-md transition-all duration-150 active:scale-[0.98] ${
                       isSelected
-                        ? 'border-[#245443] ring-4 ring-[#88c983] shadow-xl'
+                        ? 'border-[#245443] ring-3 ring-[#88c983] shadow-xl'
                         : 'border-[#c4dced] hover:border-[#7ca7c7]'
                     }`}
                   >
                     {/* Candidate Number Badge (Blue Box in Top-Left Corner like Image 3) */}
-                    <div className="absolute top-2 left-2 z-10 flex size-9 items-center justify-center rounded-md bg-[#1976d2] font-serif text-lg font-black text-white shadow-md">
+                    <div className="absolute top-1.5 left-1.5 z-10 flex size-7 sm:size-9 items-center justify-center rounded-md bg-[#1976d2] font-serif text-sm sm:text-base font-black text-white shadow-md">
                       {parseInt(c.number, 10)}
                     </div>
 
-                    {/* SVG Checkmark badge when chosen (No Emoji) */}
+                    {/* SVG Checkmark badge when chosen */}
                     {isSelected && (
-                      <div className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full bg-[#245443] text-white shadow-md">
+                      <div className="absolute top-1.5 right-1.5 z-10 flex size-6 sm:size-8 items-center justify-center rounded-full bg-[#245443] text-white shadow-md">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="size-4"
+                          className="size-3.5 sm:size-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -358,25 +356,25 @@ export function Ballot() {
                     )}
 
                     {/* Candidate Photo */}
-                    <div className="relative h-[260px] w-full bg-[#f4f8fb] sm:h-[300px]">
+                    <div className="relative flex-1 min-h-0 w-full bg-[#f4f8fb]">
                       <Image
                         src={c.photo}
                         alt={`Foto Calon ${c.name}`}
                         fill
-                        sizes="260px"
-                        className="object-contain p-2"
+                        sizes="(max-width: 768px) 45vw, 320px"
+                        className="object-contain p-1 sm:p-2"
                         priority
                       />
                     </div>
 
                     {/* Candidate Name Footer (Matching Image 3) */}
                     <div
-                      className={`py-3 text-center transition-colors ${
+                      className={`shrink-0 py-1.5 sm:py-2 text-center transition-colors ${
                         isSelected ? 'bg-[#245443] text-white' : 'bg-white text-[#0f3148]'
                       }`}
                     >
-                      <h3 className="text-base font-bold tracking-tight truncate px-2">{c.name}</h3>
-                      <p className={`text-[10px] ${isSelected ? 'text-emerald-100' : 'text-[#567a94]'}`}>
+                      <h3 className="text-xs sm:text-sm font-bold tracking-tight truncate px-2">{c.name}</h3>
+                      <p className={`text-[9px] sm:text-[10px] ${isSelected ? 'text-emerald-100' : 'text-[#567a94]'}`}>
                         Calon Kuwu No. Urut {c.number}
                       </p>
                     </div>
@@ -385,13 +383,13 @@ export function Ballot() {
               })}
             </div>
 
-            {/* Bottom Wide Red Button (Matching Image 3) */}
-            <div className="mx-auto w-full max-w-4xl">
+            {/* Bottom Wide Red Button (Matching Image 3, fits nicely at bottom without scroll) */}
+            <div className="shrink-0 mx-auto w-full max-w-3xl pb-1">
               <button
                 type="button"
                 disabled={!candidate || busy}
                 onClick={() => setConfirmOpen(true)}
-                className={`w-full rounded-xl py-4.5 text-center text-lg font-black tracking-wider uppercase text-white shadow-lg transition-all active:scale-[0.99] ${
+                className={`w-full rounded-xl py-2.5 sm:py-3.5 text-center text-sm sm:text-lg font-black tracking-wider uppercase text-white shadow-lg transition-all active:scale-[0.99] ${
                   candidate && !busy
                     ? 'bg-[#e05338] hover:bg-[#c93f25] cursor-pointer'
                     : 'cursor-not-allowed bg-[#a8c2d4] opacity-70 shadow-none'
@@ -402,7 +400,7 @@ export function Ballot() {
                   : 'SILAKAN SENTUH FOTO KANDIDAT DI ATAS'}
               </button>
 
-              <div className="mt-3 flex items-center justify-between px-2 text-xs text-[#416985]">
+              <div className="mt-1 flex items-center justify-between px-2 text-[10px] sm:text-xs text-[#416985]">
                 <span>
                   Pemilih: <strong>{voter.name}</strong> ({voter.invitationCode})
                 </span>
@@ -417,7 +415,7 @@ export function Ballot() {
             </div>
 
             {error && (
-              <div className="mx-auto mt-4 w-full max-w-4xl">
+              <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
                 <Notice tone="error">{error}</Notice>
               </div>
             )}
@@ -425,41 +423,41 @@ export function Ballot() {
         )}
       </main>
 
-      {/* ================= SCREEN 3: CONFIRMATION MODAL (CLONING IMAGE 4) ================= */}
+      {/* ================= SCREEN 3: CONFIRMATION MODAL (CLONING IMAGE 4, FITS LANDSCAPE SCREENS) ================= */}
       {confirmOpen && candidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-lg max-h-[95dvh] overflow-y-auto rounded-2xl bg-white p-4 sm:p-7 shadow-2xl">
             {/* Modal Content - Left Text + Right Photo Card Layout (Matching Image 4) */}
-            <div className="flex flex-col-reverse items-center gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col-reverse items-center gap-4 sm:flex-row sm:items-start sm:justify-between">
               {/* Left Side: Title & Question */}
               <div className="flex-1 text-center sm:text-left">
-                <h3 className="text-xl font-bold tracking-tight text-[#153424] sm:text-2xl">
+                <h3 className="text-lg font-bold tracking-tight text-[#153424] sm:text-xl">
                   Konfirmasi Pemilihan
                 </h3>
-                <p className="mt-2 text-sm font-semibold leading-relaxed text-[#b63532] sm:text-base">
+                <p className="mt-1.5 text-xs sm:text-sm font-semibold leading-relaxed text-[#b63532]">
                   Apa Anda yakin akan memilih kandidat ini?
                 </p>
-                <p className="mt-2 text-xs leading-relaxed text-[#597061]">
+                <p className="mt-1.5 text-[11px] sm:text-xs leading-relaxed text-[#597061]">
                   Pilihan Anda bersifat rahasia dan tidak dapat diubah setelah disimpan ke dalam sistem.
                 </p>
               </div>
 
               {/* Right Side: Candidate Photo Card (Matching Image 4) */}
-              <div className="shrink-0 overflow-hidden rounded-xl border-2 border-[#c5d8c3] bg-[#f5f8f3] p-2 text-center shadow-md">
-                <div className="relative size-32 overflow-hidden rounded-lg bg-white sm:size-36">
+              <div className="shrink-0 overflow-hidden rounded-xl border-2 border-[#c5d8c3] bg-[#f5f8f3] p-1.5 text-center shadow-md">
+                <div className="relative size-24 sm:size-32 overflow-hidden rounded-lg bg-white">
                   <Image
                     src={candidate.photo}
                     alt={candidate.name}
                     fill
-                    sizes="144px"
+                    sizes="128px"
                     className="object-contain p-1"
                   />
                 </div>
-                <div className="mt-2 text-center">
-                  <span className="block font-serif text-xs font-bold text-[#183e30]">
+                <div className="mt-1.5 text-center">
+                  <span className="block font-serif text-[11px] sm:text-xs font-bold text-[#183e30]">
                     Nomor {candidate.number}
                   </span>
-                  <span className="block text-xs font-black text-[#143024] truncate max-w-[130px]">
+                  <span className="block text-xs font-black text-[#143024] truncate max-w-[120px]">
                     {candidate.name}
                   </span>
                 </div>
@@ -467,12 +465,12 @@ export function Ballot() {
             </div>
 
             {/* Bottom Actions: "Ulangi" and "Pilih" (Matching Image 4) */}
-            <div className="mt-8 flex items-center justify-between border-t border-[#e2ece0] pt-4">
+            <div className="mt-5 flex items-center justify-between border-t border-[#e2ece0] pt-3">
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2.5 text-sm font-semibold text-[#546b5a] transition hover:text-[#183e30] hover:underline"
+                className="px-4 py-2 text-xs sm:text-sm font-semibold text-[#546b5a] transition hover:text-[#183e30] hover:underline"
               >
                 Ulangi
               </button>
@@ -481,7 +479,7 @@ export function Ballot() {
                 type="button"
                 disabled={busy}
                 onClick={handleVote}
-                className="rounded-xl bg-[#1976d2] px-8 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#125ea8] active:scale-95 disabled:opacity-50"
+                className="rounded-xl bg-[#1976d2] px-7 py-2.5 sm:px-8 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-md transition hover:bg-[#125ea8] active:scale-95 disabled:opacity-50"
               >
                 {busy ? 'Menyimpan...' : 'Pilih'}
               </button>
