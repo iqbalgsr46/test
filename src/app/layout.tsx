@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ElectionProvider } from '@/features/election/election-provider';
+import { LandscapeGuard } from '@/components/ui/landscape-guard';
 import './globals.css';
 export const metadata: Metadata = {
   title: { default: 'Cikaum Timur | Simulasi Pemilihan Kuwu', template: '%s | Cikaum Timur' },
@@ -11,7 +12,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="id">
       <body>
-        <ElectionProvider>{children}</ElectionProvider>
+        <ElectionProvider>
+          <LandscapeGuard />
+          {children}
+        </ElectionProvider>
       </body>
     </html>
   );

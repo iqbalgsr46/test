@@ -13,9 +13,11 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
   await page.goto('/');
 
   // 1. Full Camera Scan QR screen (Cloning Image 2)
-  await expect(page.getByText('Arahkan kamera ke kode QR pada surat undangan')).toBeVisible();
+  await expect(
+    page.getByText('Arahkan kamera belakang ke kode QR pada surat undangan'),
+  ).toBeVisible();
   await expect(page.getByText('Letakkan QR code di dalam frame')).toBeVisible();
-  await expect(page.getByText('Siap untuk scan')).toBeVisible();
+  await expect(page.getByText('Siap untuk scan (Kamera Belakang)')).toBeVisible();
 
   // Open manual/simulation drawer
   await page.getByRole('button', { name: /Input Kode/i }).click();
@@ -65,7 +67,9 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
 
   // 4. Try scanning the same QR again -> rejected
   await page.getByRole('button', { name: /Selesai/i }).click();
-  await expect(page.getByText('Arahkan kamera ke kode QR pada surat undangan')).toBeVisible();
+  await expect(
+    page.getByText('Arahkan kamera belakang ke kode QR pada surat undangan'),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: /Input Kode/i }).click();
   await page.getByPlaceholder('CT26-XXXXXX').fill(encodeInvitation(voter));

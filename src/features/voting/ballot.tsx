@@ -154,14 +154,14 @@ export function Ballot() {
       {/* Main Container */}
       <main className="min-h-dvh w-full">
         {!isLoaded ? (
-          <div className="flex min-h-dvh items-center justify-center bg-[#0d1611]">
+          <div className="flex min-h-dvh items-center justify-center bg-slate-950">
             <div className="text-center">
-              <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-4 border-emerald-400 border-t-transparent" />
-              <p className="text-sm font-medium text-emerald-200">Menyiapkan bilik suara tablet...</p>
+              <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-4 border-sky-400 border-t-transparent" />
+              <p className="text-sm font-medium text-sky-200">Menyiapkan bilik suara tablet...</p>
             </div>
           </div>
         ) : storageError ? (
-          <div className="flex min-h-dvh items-center justify-center bg-[#0d1611] p-6">
+          <div className="flex min-h-dvh items-center justify-center bg-slate-950 p-6">
             <div className="max-w-md rounded-2xl bg-white p-6 shadow-xl">
               <Notice tone="error">{storageError}</Notice>
               <div className="mt-4 text-center">
@@ -177,8 +177,17 @@ export function Ballot() {
             <div className="w-full max-w-xl">
               {/* Header Box */}
               <div className="mb-6 rounded-2xl border border-[#cde0cb] bg-[#eef7ec] p-6 text-center shadow-xs">
-                <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-[#245443] text-2xl text-white shadow-md">
-                  ✓
+                <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-[#245443] shadow-md">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="size-7 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
                 <p className="text-xs font-bold tracking-widest text-[#245443] uppercase">
                   SUARA BERHASIL DISIMPAN
@@ -264,7 +273,7 @@ export function Ballot() {
             </div>
           </div>
         ) : !voter ? (
-          /* ================= SCREEN 1: FULL KAMERA SCAN QR (CLONING IMAGE 2) ================= */
+          /* ================= SCREEN 1: FULL KAMERA BELAKANG SCAN QR (CLONING IMAGE 2) ================= */
           <div className="relative min-h-dvh w-full">
             <QrScanner onDecoded={handleScan} demoVoters={state.voters} />
             {error && (
@@ -278,9 +287,22 @@ export function Ballot() {
           <div className="flex min-h-dvh flex-col justify-between bg-[#dff0fa] px-4 pt-14 pb-6 text-[#142d3e] sm:px-8 animate-fade-in">
             {/* Header Surat Suara (Matching Image 3) */}
             <div className="mx-auto max-w-4xl text-center">
-              {/* Emblem Logo */}
-              <div className="mx-auto mb-2 flex size-14 items-center justify-center rounded-full border-2 border-[#1c557c] bg-[#eef7fd] text-2xl shadow-xs">
-                🏛️
+              {/* Official Seal SVG Icon (No Emojis) */}
+              <div className="mx-auto mb-2 flex size-14 items-center justify-center rounded-full border-2 border-[#1c557c] bg-[#eef7fd] shadow-xs">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="size-7 text-[#1c557c]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"
+                  />
+                </svg>
               </div>
               <h1 className="font-serif text-lg font-black tracking-widest uppercase text-[#0d344d] sm:text-xl">
                 SURAT SUARA
@@ -319,10 +341,19 @@ export function Ballot() {
                       {parseInt(c.number, 10)}
                     </div>
 
-                    {/* Checkmark badge when chosen */}
+                    {/* SVG Checkmark badge when chosen (No Emoji) */}
                     {isSelected && (
-                      <div className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full bg-[#245443] text-sm font-bold text-white shadow-md">
-                        ✓
+                      <div className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full bg-[#245443] text-white shadow-md">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="size-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={3}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
                       </div>
                     )}
 

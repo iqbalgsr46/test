@@ -111,8 +111,19 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
           <div className="flex items-center gap-3">
             {currentTime && (
-              <span className="hidden rounded-md border border-[#cfdacd] bg-[#f8faf6] px-3 py-1.5 font-mono text-xs font-semibold text-[#294232] md:inline">
-                🕒 {currentTime}
+              <span className="hidden items-center gap-1.5 rounded-md border border-[#cfdacd] bg-[#f8faf6] px-3 py-1.5 font-mono text-xs font-semibold text-[#294232] md:inline-flex">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="size-3.5 text-[#3b5e47]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+                </svg>
+                <span>{currentTime}</span>
               </span>
             )}
             <Link
@@ -287,8 +298,16 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       }`}
                     >
                       {isLeading && (
-                        <span className="absolute top-3 right-3 rounded-full bg-[#183e30] px-3 py-1 text-[10px] font-bold text-[#e5d4a4] shadow-xs">
-                          ⭐ Unggul Sementara
+                        <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-[#183e30] px-3 py-1 text-[10px] font-bold text-[#e5d4a4] shadow-xs">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="size-3 text-[#e5d4a4]"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span>Unggul Sementara</span>
                         </span>
                       )}
 
@@ -456,7 +475,30 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                     : 'bg-[#f5eecb] text-[#785913]'
                                 }`}
                               >
-                                {isVoted ? '✓ Sudah Memilih' : '⏳ Belum Memilih'}
+                                {isVoted ? (
+                                  <>
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="size-3 text-[#1c552f]"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth={3}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                    <span>Sudah Memilih</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="size-1.5 rounded-full bg-[#785913]" />
+                                    <span>Belum Memilih</span>
+                                  </>
+                                )}
                               </span>
                             </td>
                             <td className="px-4 py-3 font-mono text-[11px] text-[#4a6150]">
@@ -466,10 +508,24 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                               <Link
                                 href={`/cetak/undangan/${voter.id}`}
                                 target="_blank"
-                                className="inline-flex items-center gap-1 rounded-md border border-[#c5d5c3] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#245443] transition hover:bg-[#edf5eb]"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-[#c5d5c3] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#245443] transition hover:bg-[#edf5eb]"
                                 title="Cetak Surat Undangan ber-QR untuk warga ini"
                               >
-                                🖨️ Cetak Undangan
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="size-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                                  />
+                                </svg>
+                                <span>Cetak Undangan</span>
                               </Link>
                             </td>
                           </tr>

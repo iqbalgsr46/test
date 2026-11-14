@@ -18,6 +18,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
   const [cameraActive, setCameraActive] = useState(true);
   const [cameraError, setCameraError] = useState('');
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(undefined);
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,24 +32,39 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
     callback.current = onDecoded;
   }, [onDecoded]);
 
-  // Check if multiple camera devices are available
+  // Enumerate video devices and strictly prioritize rear/back camera on mobile devices
   useEffect(() => {
-    async function checkDevices() {
+    async function findBackCamera() {
       try {
         if (!navigator.mediaDevices?.enumerateDevices) return;
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoInputs = devices.filter((d) => d.kind === 'videoinput');
+
         if (videoInputs.length > 1) {
           setHasMultipleCameras(true);
+
+          // Find back/rear camera specifically
+          const backCam = videoInputs.find((d) =>
+            /back|rear|environment|belakang|main/i.test(d.label),
+          );
+
+          if (backCam) {
+            setSelectedDeviceId(backCam.deviceId);
+          } else {
+            // On Android/iOS, the rear camera is usually listed last
+            setSelectedDeviceId(videoInputs[videoInputs.length - 1].deviceId);
+          }
+        } else if (videoInputs.length === 1) {
+          setSelectedDeviceId(videoInputs[0].deviceId);
         }
       } catch {
-        // ignore
+        // ignore device listing error
       }
     }
-    void checkDevices();
+    void findBackCamera();
   }, []);
 
-  // Continuous Camera Scanning
+  // Continuous Camera Scanning with strict Rear/Back Camera Priority
   useEffect(() => {
     if (!cameraActive) return;
     const videoElement = video.current;
@@ -67,10 +83,21 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
 
         const reader = new BrowserQRCodeReader();
 
-        // Attempt constraints with preferred facingMode, with graceful fallback to any video
+        // Build constraints: prioritize exact deviceId or environment (rear/back camera)
+        const constraints: MediaStreamConstraints = selectedDeviceId
+          ? { video: { deviceId: { exact: selectedDeviceId } }, audio: false }
+          : {
+              video: {
+                facingMode: { ideal: facingMode },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+              },
+              audio: false,
+            };
+
         try {
           controls = await reader.decodeFromConstraints(
-            { video: { facingMode }, audio: false },
+            constraints,
             videoElement,
             (result, _error, activeControls) => {
               if (result && !disposed) {
@@ -81,10 +108,10 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
             },
           );
         } catch {
-          // If preferred facingMode fails, try generic video constraint
+          // Fallback to generic rear camera constraint if deviceId fails
           if (disposed) return;
           controls = await reader.decodeFromConstraints(
-            { video: true, audio: false },
+            { video: { facingMode: { ideal: 'environment' } }, audio: false },
             videoElement,
             (result, _error, activeControls) => {
               if (result && !disposed) {
@@ -101,10 +128,10 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
         if (!disposed) {
           setCameraError(
             e instanceof DOMException && e.name === 'NotAllowedError'
-              ? 'Izin kamera ditolak. Silakan izinkan akses kamera di browser Anda.'
+              ? 'Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser Anda.'
               : e instanceof Error
                 ? e.message
-                : 'Kamera tidak dapat diakses.',
+                : 'Kamera belakang tidak dapat diakses.',
           );
         }
       }
@@ -120,7 +147,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
         stream.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [cameraActive, facingMode]);
+  }, [cameraActive, facingMode, selectedDeviceId]);
 
   async function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -149,7 +176,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
       onDecoded(result.getText());
     } catch {
       setManualError(
-        'Kode QR tidak terbaca pada gambar. Pastikan gambar jelas atau gunakan input manual.',
+        'Kode QR tidak terbaca pada gambar. Pastikan foto jelas atau ketik kode manual.',
       );
     } finally {
       URL.revokeObjectURL(url);
@@ -165,30 +192,36 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
   }
 
   function toggleCameraFlip() {
+    setSelectedDeviceId(undefined);
     setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
   }
 
   return (
-    <div className="relative flex min-h-[82vh] w-full flex-col items-center justify-between overflow-hidden rounded-2xl bg-black shadow-2xl sm:min-h-[88vh]">
-      {/* Background Live Video Feed */}
+    <div className="relative flex min-h-dvh w-full flex-col items-center justify-between overflow-hidden bg-slate-950">
+      {/* Background Live Video Feed (Clean Full-Screen) */}
       <video
         ref={video}
         muted
         playsInline
         autoPlay
         className="absolute inset-0 size-full object-cover"
-        aria-label="Kamera Pemindai QR Bilik Suara"
+        aria-label="Kamera Belakang Pemindai QR"
       />
 
-      {/* Subtle Dark Vignette Overlay for Contrast */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70" />
+      {/* Clean Full-Screen Scanning Laser Animation (Cyan / Blue, Not Green!) */}
+      {cameraActive && !cameraError && (
+        <div className="full-scanner-laser pointer-events-none z-20" />
+      )}
 
-      {/* TOP HEADER: Instruction Banner (Matching Image 2) */}
-      <div className="relative z-10 mt-6 w-full max-w-xl px-4 text-center">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/50 px-5 py-2 text-xs font-medium text-white shadow-lg backdrop-blur-md">
+      {/* Subtle Dark Vignette Overlay for Crisp Contrast */}
+      <div className="pointer-events-none absolute inset-0 bg-radial-[circle_at_center,transparent_40%,rgba(2,6,23,0.7)_100%]" />
+
+      {/* Top Banner (Clean typography, no emojis) */}
+      <div className="relative z-30 mt-5 w-full max-w-xl px-4 text-center">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-slate-900/80 px-5 py-2 text-xs font-semibold text-sky-100 shadow-xl backdrop-blur-md">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="size-4 text-emerald-400"
+            className="size-4 text-sky-400 shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -201,28 +234,25 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
             />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span>Arahkan kamera ke kode QR pada surat undangan</span>
+          <span>Arahkan kamera belakang ke kode QR pada surat undangan</span>
         </div>
       </div>
 
-      {/* CENTER VIEWFINDER: Green Reticles + Laser Line (Cloning Image 2) */}
-      <div className="relative z-10 flex flex-col items-center justify-center py-6">
-        <div className="relative size-[250px] sm:size-[310px]">
-          {/* Top-Left Corner */}
-          <div className="absolute top-0 left-0 size-10 border-t-[5px] border-l-[5px] border-[#22c55e] rounded-tl-sm shadow-[0_0_8px_#22c55e]" />
-          {/* Top-Right Corner */}
-          <div className="absolute top-0 right-0 size-10 border-t-[5px] border-r-[5px] border-[#22c55e] rounded-tr-sm shadow-[0_0_8px_#22c55e]" />
-          {/* Bottom-Left Corner */}
-          <div className="absolute bottom-0 left-0 size-10 border-b-[5px] border-l-[5px] border-[#22c55e] rounded-bl-sm shadow-[0_0_8px_#22c55e]" />
-          {/* Bottom-Right Corner */}
-          <div className="absolute bottom-0 right-0 size-10 border-b-[5px] border-r-[5px] border-[#22c55e] rounded-br-sm shadow-[0_0_8px_#22c55e]" />
+      {/* Center Framing Guides (Clean Cyan/White Brackets, Not Green!) */}
+      <div className="relative z-20 flex flex-col items-center justify-center py-6">
+        <div className="relative size-[250px] sm:size-[320px]">
+          {/* Top-Left Corner Bracket */}
+          <div className="absolute top-0 left-0 size-9 border-t-[3.5px] border-l-[3.5px] border-sky-400 rounded-tl-sm shadow-[0_0_10px_#38bdf8]" />
+          {/* Top-Right Corner Bracket */}
+          <div className="absolute top-0 right-0 size-9 border-t-[3.5px] border-r-[3.5px] border-sky-400 rounded-tr-sm shadow-[0_0_10px_#38bdf8]" />
+          {/* Bottom-Left Corner Bracket */}
+          <div className="absolute bottom-0 left-0 size-9 border-b-[3.5px] border-l-[3.5px] border-sky-400 rounded-bl-sm shadow-[0_0_10px_#38bdf8]" />
+          {/* Bottom-Right Corner Bracket */}
+          <div className="absolute bottom-0 right-0 size-9 border-b-[3.5px] border-r-[3.5px] border-sky-400 rounded-br-sm shadow-[0_0_10px_#38bdf8]" />
 
-          {/* Animated Laser Scanning Line */}
-          {cameraActive && !cameraError && <div className="scanner-laser" />}
-
-          {/* Floating Dark Center Badge (Matching Image 2) */}
+          {/* Floating Dark Center Badge */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="whitespace-nowrap rounded-md border border-white/20 bg-black/70 px-4 py-1.5 text-center text-xs font-semibold text-white shadow-lg backdrop-blur-md">
+            <div className="whitespace-nowrap rounded-md border border-sky-400/40 bg-slate-900/80 px-4 py-1.5 text-center text-xs font-semibold text-sky-100 shadow-xl backdrop-blur-md">
               Letakkan QR code di dalam frame
             </div>
           </div>
@@ -230,52 +260,80 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
 
         {/* Camera Error / Permission Fallback */}
         {cameraError && (
-          <div className="mt-4 max-w-sm rounded-xl border border-red-500/40 bg-red-950/80 p-4 text-center text-xs text-red-200 shadow-lg backdrop-blur-md">
-            <p className="font-semibold text-white">Kamera tidak aktif</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-red-300">{cameraError}</p>
+          <div className="mt-4 max-w-sm rounded-xl border border-rose-500/40 bg-slate-900/90 p-4 text-center text-xs text-rose-200 shadow-xl backdrop-blur-md">
+            <p className="font-bold text-white">Kamera Belakang Tidak Aktif</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-rose-300">{cameraError}</p>
             <div className="mt-3 flex justify-center gap-2">
               <button
                 type="button"
                 onClick={() => setCameraActive(true)}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-500"
+                className="rounded-lg bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-sky-500"
               >
                 Coba Lagi
               </button>
               <button
                 type="button"
                 onClick={() => setShowManual(true)}
-                className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
+                className="rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
               >
-                Gunakan Input Manual
+                Input Manual
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* BOTTOM BAR: Status Pill & Controls (Matching Image 2) */}
-      <div className="relative z-10 mb-6 flex w-full max-w-2xl flex-col items-center px-4">
-        {/* Status Pill: "Siap untuk scan" */}
-        <div className="inline-flex items-center gap-2.5 rounded-full border border-emerald-500/40 bg-black/60 px-5 py-2 text-xs font-semibold text-emerald-300 shadow-lg backdrop-blur-md">
-          <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>Siap untuk scan</span>
+      {/* Bottom Bar: Status Indicator & Minimal Controls */}
+      <div className="relative z-30 mb-6 flex w-full max-w-2xl flex-col items-center px-4">
+        {/* Status Pill: "Siap untuk scan" (Cyan/Blue, Not Green!) */}
+        <div className="inline-flex items-center gap-2.5 rounded-full border border-sky-500/40 bg-slate-900/80 px-5 py-2 text-xs font-semibold text-sky-200 shadow-xl backdrop-blur-md">
+          <span className="size-2 rounded-full bg-sky-400 animate-ping" />
+          <span>Siap untuk scan (Kamera Belakang)</span>
         </div>
 
-        {/* Bottom Utility Controls */}
+        {/* Bottom Utility Controls (Clean SVGs, No Emojis) */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
           {hasMultipleCameras && (
             <button
               type="button"
               onClick={toggleCameraFlip}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white shadow-xs backdrop-blur-md transition hover:bg-white/20"
-              title="Ganti kamera depan/belakang"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/70 px-4 py-2 text-xs font-medium text-white shadow-md backdrop-blur-md transition hover:bg-slate-800"
+              title="Ganti kamera"
             >
-              🔄 Ganti Kamera
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="size-3.5 text-sky-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <span>Ganti Kamera</span>
             </button>
           )}
 
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white shadow-xs backdrop-blur-md transition hover:bg-white/20">
-            <span>📁 Unggah Gambar QR</span>
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/70 px-4 py-2 text-xs font-medium text-white shadow-md backdrop-blur-md transition hover:bg-slate-800">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="size-3.5 text-sky-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span>Unggah Gambar QR</span>
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
@@ -288,30 +346,44 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
           <button
             type="button"
             onClick={() => setShowManual((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white shadow-xs backdrop-blur-md transition hover:bg-white/20"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/70 px-4 py-2 text-xs font-medium text-white shadow-md backdrop-blur-md transition hover:bg-slate-800"
           >
-            <span>⌨️ Input Kode / Simulasi</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="size-3.5 text-sky-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            <span>Input Kode / Simulasi</span>
           </button>
         </div>
 
-        {/* Collapsible Manual Input & Testing Drawer */}
+        {/* Collapsible Manual Input & Testing Drawer (Clean, no emojis) */}
         {showManual && (
-          <div className="mt-4 w-full max-w-md rounded-2xl border border-white/20 bg-black/85 p-5 text-white shadow-2xl backdrop-blur-xl animate-fade-in">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                Pilihan Input Alternatif & Simulasi
+          <div className="mt-4 w-full max-w-md rounded-2xl border border-sky-500/30 bg-slate-900/95 p-5 text-white shadow-2xl backdrop-blur-xl animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
+                Input Alternatif & Simulasi Warga
               </span>
               <button
                 type="button"
                 onClick={() => setShowManual(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-slate-400 hover:text-white"
               >
-                ✕
+                Tutup
               </button>
             </div>
 
             <form onSubmit={handleManualSubmit} className="mt-3">
-              <label htmlFor="manual-code" className="block text-xs font-medium text-gray-300">
+              <label htmlFor="manual-code" className="block text-xs font-medium text-slate-300">
                 Ketik Kode Undangan (contoh: CT26-A7K2P9)
               </label>
               <div className="mt-1.5 flex gap-2">
@@ -321,12 +393,12 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="CT26-XXXXXX"
-                  className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-mono uppercase tracking-wider text-white placeholder-gray-400 focus:border-emerald-400 focus:outline-hidden"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-mono uppercase tracking-wider text-white placeholder-slate-400 focus:border-sky-400 focus:outline-hidden"
                 />
                 <button
                   type="submit"
                   disabled={!code.trim() || busy}
-                  className="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                  className="shrink-0 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-sky-500 disabled:opacity-50"
                 >
                   Verifikasi
                 </button>
@@ -334,14 +406,14 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
             </form>
 
             {manualError && (
-              <p className="mt-2 text-xs text-red-400">{manualError}</p>
+              <p className="mt-2 text-xs text-rose-400">{manualError}</p>
             )}
 
-            {/* Quick Demo Voters Chips for Immediate Click */}
+            {/* Quick Demo Voters Chips for Immediate Click (No Emojis) */}
             {demoVoters.length > 0 && (
-              <div className="mt-4 border-t border-white/10 pt-3">
-                <p className="text-[11px] font-semibold text-gray-300">
-                  Uji Coba Cepat (Klik salah satu warga):
+              <div className="mt-4 border-t border-slate-800 pt-3">
+                <p className="text-[11px] font-semibold text-slate-300">
+                  Uji Coba Cepat (Pilih salah satu warga):
                 </p>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   {demoVoters.map((item) => {
@@ -353,12 +425,12 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
                         onClick={() => onDecoded(item.invitationCode)}
                         className={`rounded-lg border p-2 text-left text-xs transition ${
                           already
-                            ? 'border-gray-700 bg-gray-800/60 opacity-60'
-                            : 'border-white/20 bg-white/10 hover:border-emerald-400 hover:bg-white/20'
+                            ? 'border-slate-800 bg-slate-800/40 opacity-50'
+                            : 'border-slate-700 bg-slate-800/80 hover:border-sky-400 hover:bg-slate-700'
                         }`}
                       >
                         <span className="block font-semibold text-white truncate">{item.name}</span>
-                        <span className="block font-mono text-[10px] text-gray-300">
+                        <span className="block font-mono text-[10px] text-slate-400">
                           {item.invitationCode}
                         </span>
                       </button>
