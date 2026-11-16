@@ -376,15 +376,18 @@ a {
 
 @keyframes coblos-strike {
   0% {
-    transform: translate(-30.4%, -77.8%) scale(1.6) translate(35px, -50px) rotate(8deg);
-    opacity: 0;
+    transform: translate(-30.4%, -77.8%) scale(1.35) translate(22px, -35px) rotate(5deg);
+    opacity: 0.35;
   }
-  50% {
-    transform: translate(-30.4%, -77.8%) scale(0.95) translate(-2px, 3px) rotate(-1deg);
+  20% {
     opacity: 1;
   }
-  80% {
-    transform: translate(-30.4%, -77.8%) scale(1.03) translate(0, -1px);
+  60% {
+    transform: translate(-30.4%, -77.8%) scale(0.96) translate(-1px, 2px) rotate(-1deg);
+    opacity: 1;
+  }
+  85% {
+    transform: translate(-30.4%, -77.8%) scale(1.02) translate(0, -1px);
     opacity: 1;
   }
   100% {
@@ -394,8 +397,11 @@ a {
 }
 
 .animate-coblos {
-  animation: coblos-strike 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: coblos-strike 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: 30.4% 77.8%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 @keyframes fade-in {

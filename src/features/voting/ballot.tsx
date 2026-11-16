@@ -105,6 +105,14 @@ export function Ballot() {
 
   return (
     <div className="relative h-dvh max-h-dvh w-full overflow-hidden font-sans select-none">
+      {/* Preload & decode coblos paku into GPU memory so first click has 0ms delay */}
+      <div
+        className="pointer-events-none fixed -top-96 left-0 size-1 overflow-hidden opacity-0"
+        aria-hidden="true"
+      >
+        <Image src="/images/coblos-paku.png" alt="" width={160} height={192} priority />
+      </div>
+
       {/* Discreet Top Navigation Bar for Admin (only on camera scanner screen) */}
       {!voter && (
         <header className="absolute top-0 right-0 left-0 z-40 flex items-center justify-end px-5 py-3 pointer-events-none">
