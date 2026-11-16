@@ -36,6 +36,16 @@ export function Ballot() {
     return () => clearTimeout(timer);
   }, [isVoted]);
 
+  // Eagerly preload and decode coblos paku image so the browser has it ready in memory before any user tap
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const img = new window.Image();
+    img.src = '/images/coblos-paku.png';
+    if (typeof img.decode === 'function') {
+      img.decode().catch(() => {});
+    }
+  }, []);
+
   function handleScan(value: string) {
     setError('');
     setSubmittedReceiptId(null);
@@ -105,12 +115,20 @@ export function Ballot() {
 
   return (
     <div className="relative h-dvh max-h-dvh w-full overflow-hidden font-sans select-none">
-      {/* Preload & decode coblos paku into GPU memory so first click has 0ms delay */}
+      {/* Preload coblos paku asset so browser warms exact unoptimized asset */}
       <div
         className="pointer-events-none fixed -top-96 left-0 size-1 overflow-hidden opacity-0"
         aria-hidden="true"
       >
-        <Image src="/images/coblos-paku.png" alt="" width={160} height={192} priority />
+        <Image
+          src="/images/coblos-paku.png"
+          alt=""
+          width={160}
+          height={192}
+          unoptimized
+          priority
+          decoding="sync"
+        />
       </div>
 
       {/* Discreet Top Navigation Bar for Admin (only on camera scanner screen) */}
@@ -263,21 +281,28 @@ export function Ballot() {
                         {c.number}
                       </div>
 
-                      {/* Animasi Gambar Coblos Paku (Ukuran proporsional pas, titik coblos tepat di tengah foto) */}
-                      {isSelected && (
-                        <div className="pointer-events-none absolute inset-0 z-30 overflow-visible">
-                          <div className="absolute top-1/2 left-1/2 w-32 sm:w-40 aspect-[348/417] animate-coblos">
-                            <Image
-                              src="/images/coblos-paku.png"
-                              alt="Tercoblos Paku"
-                              fill
-                              sizes="160px"
-                              className="object-contain"
-                              priority
-                            />
-                          </div>
+                      {/* Animasi Gambar Coblos Paku (Pre-mounted in DOM, zero network request, zero decode delay on first click) */}
+                      <div
+                        className={`pointer-events-none absolute inset-0 z-30 overflow-visible transition-opacity duration-75 ${
+                          isSelected ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        aria-hidden={!isSelected}
+                      >
+                        <div
+                          className={`absolute top-1/2 left-1/2 w-32 sm:w-40 aspect-[348/417] ${
+                            isSelected ? 'animate-coblos' : '-translate-x-[30.4%] -translate-y-[77.8%]'
+                          }`}
+                        >
+                          <Image
+                            src="/images/coblos-paku.png"
+                            alt={isSelected ? 'Tercoblos Paku' : ''}
+                            fill
+                            unoptimized
+                            decoding="sync"
+                            className="object-contain"
+                          />
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     {/* Candidate Name Footer (Tepat dibawah kotak foto, merah saat dipilih) */}
@@ -372,7 +397,7 @@ export function Ballot() {
                         src="/images/coblos-paku.png"
                         alt="Tercoblos Paku"
                         fill
-                        sizes="80px"
+                        unoptimized
                         className="object-contain"
                       />
                     </div>

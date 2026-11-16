@@ -11,11 +11,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
-      <head>
-        <link rel="preload" href="/images/coblos-paku.png" as="image" type="image/png" />
-        <link rel="preload" href="/images/calon-upin.jpg?v=3" as="image" type="image/jpeg" />
-        <link rel="preload" href="/images/calon-ipin.jpg?v=3" as="image" type="image/jpeg" />
-      </head>
       <body>
         <ElectionProvider>
           <LandscapeGuard />
