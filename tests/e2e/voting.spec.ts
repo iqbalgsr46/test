@@ -29,9 +29,9 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
   });
   await expect(redButtonDisabled).toBeDisabled();
 
-  // Select Candidate 01
-  await page.getByRole('button', { name: /Pilih Calon Nomor 01 Ahmad Hidayat/i }).click();
-  const redButton01 = page.getByRole('button', { name: 'PILIH KANDIDAT 01' });
+  // Select Candidate A (Upin)
+  await page.getByRole('button', { name: /Pilih Calon A Upin/i }).click();
+  const redButton01 = page.getByRole('button', { name: 'PILIH KANDIDAT A' });
   await expect(redButton01).toBeEnabled();
 
   // Click red button -> Opens confirmation modal (Cloning Image 4)
@@ -46,9 +46,9 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
   await ulangiBtn.click();
   await expect(page.getByText('Konfirmasi Pemilihan')).not.toBeVisible();
 
-  // Switch to Candidate 02
-  await page.getByRole('button', { name: /Pilih Calon Nomor 02 Dedi Kurniawan/i }).click();
-  const redButton02 = page.getByRole('button', { name: 'PILIH KANDIDAT 02' });
+  // Switch to Candidate B (Ipin)
+  await page.getByRole('button', { name: /Pilih Calon B Ipin/i }).click();
+  const redButton02 = page.getByRole('button', { name: 'PILIH KANDIDAT B' });
   await redButton02.click();
   await expect(page.getByText('Konfirmasi Pemilihan')).toBeVisible();
 

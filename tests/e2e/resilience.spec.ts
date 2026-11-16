@@ -79,19 +79,19 @@ test('dua tab dengan kandidat berbeda: hanya pemenang yang sukses, tab kalah men
   );
   const second = await context.newPage();
 
-  // Tab A (second) memilih candidate-02 (Dedi Kurniawan)
+  // Tab A (second) memilih candidate-02 (Ipin)
   await second.goto('/bilik');
   await second.getByLabel('Kode undangan atau isi QR').fill(encodeInvitation(ready.voters[0]));
   await second.getByRole('button', { name: 'Verifikasi undangan' }).click();
-  await second.getByRole('button', { name: 'Pilih Dedi Kurniawan' }).click();
+  await second.getByRole('button', { name: 'Pilih Ipin' }).click();
   await second.getByRole('button', { name: 'Pilih kandidat ini', exact: true }).click();
   await expect(second.getByRole('dialog')).toBeVisible();
 
-  // Tab B (page) memilih candidate-01 (Ahmad Hidayat)
+  // Tab B (page) memilih candidate-01 (Upin)
   await page.goto('/bilik');
   await page.getByLabel('Kode undangan atau isi QR').fill(encodeInvitation(ready.voters[0]));
   await page.getByRole('button', { name: 'Verifikasi undangan' }).click();
-  await page.getByRole('button', { name: 'Pilih Ahmad Hidayat' }).click();
+  await page.getByRole('button', { name: 'Pilih Upin' }).click();
   await page.getByRole('button', { name: 'Pilih kandidat ini', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
@@ -135,19 +135,19 @@ test('dialog konfirmasi di tab A otomatis terinvalidasi dan tertutup jika tab la
   );
   const second = await context.newPage();
 
-  // Tab A (page) membuka bilik dan membuka dialog konfirmasi Dedi Kurniawan
+  // Tab A (page) membuka bilik dan membuka dialog konfirmasi Ipin
   await page.goto('/bilik');
   await page.getByLabel('Kode undangan atau isi QR').fill(encodeInvitation(ready.voters[0]));
   await page.getByRole('button', { name: 'Verifikasi undangan' }).click();
-  await page.getByRole('button', { name: 'Pilih Dedi Kurniawan' }).click();
+  await page.getByRole('button', { name: 'Pilih Ipin' }).click();
   await page.getByRole('button', { name: 'Pilih kandidat ini', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
-  // Tab B (second) menyelesaikan vote untuk pemilih yang sama dengan Ahmad Hidayat
+  // Tab B (second) menyelesaikan vote untuk pemilih yang sama dengan Upin
   await second.goto('/bilik');
   await second.getByLabel('Kode undangan atau isi QR').fill(encodeInvitation(ready.voters[0]));
   await second.getByRole('button', { name: 'Verifikasi undangan' }).click();
-  await second.getByRole('button', { name: 'Pilih Ahmad Hidayat' }).click();
+  await second.getByRole('button', { name: 'Pilih Upin' }).click();
   await second.getByRole('button', { name: 'Pilih kandidat ini', exact: true }).click();
   await second.getByRole('button', { name: 'Pilih', exact: true }).click();
   await expect(second.getByRole('heading', { name: 'Pilihan berhasil disimpan' })).toBeVisible();
@@ -269,7 +269,7 @@ test('tampilan responsif, foto termuat, dan bukti PDF', async ({ page }) => {
     .fill(encodeInvitation(readyFixture().voters[0]));
   await page.getByRole('button', { name: 'Verifikasi undangan' }).click();
   await expect(page.getByTestId('candidate-option')).toHaveCount(2);
-  await expect(page.getByRole('img', { name: 'Foto contoh Ahmad Hidayat' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Foto contoh Upin' })).toBeVisible();
   await expect
     .poll(() =>
       page

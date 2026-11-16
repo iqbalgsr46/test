@@ -15,17 +15,17 @@ export const ELECTION = {
 export const CANDIDATES: Candidate[] = [
   {
     id: 'candidate-01',
-    number: '01',
-    name: 'Ahmad Hidayat',
-    description: 'Calon kuwu simulasi',
-    photo: '/images/calon-01.jpg?v=2',
+    number: 'A',
+    name: 'Upin',
+    description: 'Calon kuwu simulasi Upin',
+    photo: '/images/calon-upin.jpg?v=3',
   },
   {
     id: 'candidate-02',
-    number: '02',
-    name: 'Dedi Kurniawan',
-    description: 'Calon kuwu simulasi',
-    photo: '/images/calon-02.jpg?v=2',
+    number: 'B',
+    name: 'Ipin',
+    description: 'Calon kuwu simulasi Ipin',
+    photo: '/images/calon-ipin.jpg?v=3',
   },
 ];
 

@@ -133,7 +133,7 @@ test('bukti cetak memiliki QR yang terbaca tanpa identitas atau pilihan pemilih'
   await expect(document).toContainText('Minggu, 22 November 2026');
   await expect(document).toContainText('TPS 001');
   await expect(document).not.toContainText(
-    /Siti Aminah|DEMO-0001|candidate-01|Ahmad Hidayat|Dedi Kurniawan/,
+    /Siti Aminah|DEMO-0001|candidate-01|Upin|Ipin/,
   );
   const qr = document.getByRole('img', { name: 'QR bukti simulasi' });
   expect(await decodeQr(await qr.screenshot())).toBe(`PILKADES:CT-2026:BUKTI:${receiptId}`);

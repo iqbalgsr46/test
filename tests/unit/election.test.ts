@@ -320,16 +320,16 @@ describe('demo fixtures', () => {
       })),
     ).toEqual([
       {
-        name: 'Ahmad Hidayat',
-        number: '01',
-        photo: '/images/calon-01.jpg?v=2',
-        description: 'Calon kuwu simulasi',
+        name: 'Upin',
+        number: 'A',
+        photo: '/images/calon-upin.jpg?v=3',
+        description: 'Calon kuwu simulasi Upin',
       },
       {
-        name: 'Dedi Kurniawan',
-        number: '02',
-        photo: '/images/calon-02.jpg?v=2',
-        description: 'Calon kuwu simulasi',
+        name: 'Ipin',
+        number: 'B',
+        photo: '/images/calon-ipin.jpg?v=3',
+        description: 'Calon kuwu simulasi Ipin',
       },
     ]);
     expect(state.voters[0].name).toBe('Siti Aminah');

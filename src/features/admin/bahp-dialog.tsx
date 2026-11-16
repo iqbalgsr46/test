@@ -142,7 +142,7 @@ export function BahpDialog({ open, onClose, state }: BahpDialogProps) {
           {/* Signatures */}
           <div className="mt-8 grid grid-cols-2 gap-4 text-center text-[10px] text-black">
             <div>
-              <p>Saksi Calon 01 & 02,</p>
+              <p>Saksi Calon A & B,</p>
               <div className="my-8 border-b border-dashed border-gray-400" />
               <p className="font-semibold">( ............................................ )</p>
             </div>

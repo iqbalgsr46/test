@@ -230,7 +230,7 @@ export function Ballot() {
                   <button
                     key={c.id}
                     type="button"
-                    aria-label={`Pilih Calon Nomor ${c.number} ${c.name}`}
+                    aria-label={`Pilih Calon ${c.number} ${c.name}`}
                     aria-pressed={isSelected}
                     onClick={() => setCandidateId(c.id)}
                     className="group relative flex h-full max-h-[58dvh] w-auto aspect-[3/4] sm:aspect-[4/5] flex-col overflow-visible rounded-none border-0 shadow-none bg-transparent transition-transform active:scale-[0.98]"
@@ -252,7 +252,7 @@ export function Ballot() {
                           isSelected ? 'bg-[#dc2626]' : 'bg-[#1976d2]'
                         }`}
                       >
-                        {parseInt(c.number, 10)}
+                        {c.number}
                       </div>
 
                       {/* Animasi Gambar Coblos Paku (Ukuran proporsional pas, titik coblos tepat di tengah foto) */}
@@ -372,7 +372,7 @@ export function Ballot() {
                 </div>
                 <div className="mt-1.5 text-center">
                   <span className="block font-sans text-[11px] sm:text-xs font-bold text-[#dc2626]">
-                    Nomor {candidate.number}
+                    Kandidat {candidate.number}
                   </span>
                   <span className="block text-xs font-black text-[#143024] truncate max-w-[120px]">
                     {candidate.name}

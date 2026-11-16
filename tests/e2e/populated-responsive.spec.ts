@@ -54,7 +54,7 @@ for (const width of [320, 390, 768]) {
     await loadState(page, ready, '/bilik');
     await page.getByLabel('Kode undangan atau isi QR').fill(encodeInvitation(ready.voters[0]));
     await page.getByRole('button', { name: 'Verifikasi undangan' }).click();
-    await page.getByRole('button', { name: 'Pilih Ahmad Hidayat', exact: true }).click();
+    await page.getByRole('button', { name: 'Pilih Upin', exact: true }).click();
     await page.getByRole('button', { name: 'Pilih kandidat ini', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
