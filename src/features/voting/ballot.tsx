@@ -253,37 +253,31 @@ export function Ballot() {
         ) : (
           /* ================= SCREEN 2: PILIH CALON KUWU (CLONING IMAGE 3: FULL LAYAR ADAPTIF, TANPA SCROLL) ================= */
           <div className="h-dvh max-h-dvh w-full overflow-hidden flex flex-col justify-between bg-[#dff0fa] px-3 py-2 sm:px-6 sm:py-3 text-[#142d3e] select-none animate-fade-in">
-            {/* Header Surat Suara (Compact height for landscape screens) */}
+            {/* Header Surat Suara (Clean modern typography & Logo Benteng Pancasila) */}
             <div className="shrink-0 mx-auto w-full max-w-4xl text-center pt-0.5 sm:pt-1">
-              {/* Official Seal SVG Icon */}
-              <div className="mx-auto mb-1 flex size-7 sm:size-9 items-center justify-center rounded-full border border-[#1c557c] bg-[#eef7fd] shadow-xs">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="size-4 sm:size-5 text-[#1c557c]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"
-                  />
-                </svg>
+              {/* Official Logo Benteng Pancasila Subang */}
+              <div className="relative mx-auto mb-1 size-8 sm:size-10 shrink-0">
+                <Image
+                  src="/images/logo-benteng-pancasila.png"
+                  alt="Logo Benteng Pancasila Subang"
+                  fill
+                  sizes="40px"
+                  className="object-contain"
+                  priority
+                />
               </div>
-              <h1 className="font-serif text-xs sm:text-base font-black tracking-widest uppercase text-[#0d344d] leading-tight">
+              <h1 className="font-sans text-xs sm:text-base font-extrabold tracking-widest uppercase text-[#0d344d] leading-tight">
                 SURAT SUARA
               </h1>
-              <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#184e72] leading-tight">
+              <h2 className="font-sans text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#184e72] leading-tight mt-0.5">
                 PEMILIHAN KUWU DESA {ELECTION.village.toUpperCase()}
               </h2>
-              <p className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-[#356586] leading-tight">
-                KEC. {ELECTION.district.toUpperCase()} · KAB. {ELECTION.regency.toUpperCase()} · TAHUN 2026
+              <p className="font-sans text-[9px] sm:text-[11px] font-medium uppercase tracking-wider text-[#356586] leading-tight mt-0.5">
+                KEC. {ELECTION.district.toUpperCase()} · KAB. {ELECTION.regency.toUpperCase()} · TAHUN 2024
               </p>
             </div>
 
-            {/* Candidate Row (Matching Image 3, flexible height, fits viewport perfectly without scroll) */}
+            {/* Candidate Row (Kotak lancip tanpa shadow, warna merah saat dipilih, animasi coblos paku) */}
             <div className="flex-1 min-h-0 w-full flex items-center justify-center gap-3 sm:gap-6 px-2 my-1 sm:my-2">
               {CANDIDATES.map((c) => {
                 const isSelected = candidateId === c.id;
@@ -294,23 +288,23 @@ export function Ballot() {
                     aria-label={`Pilih Calon Nomor ${c.number} ${c.name}`}
                     aria-pressed={isSelected}
                     onClick={() => setCandidateId(c.id)}
-                    className={`group relative flex h-full max-h-[58dvh] w-auto aspect-[3/4] sm:aspect-[4/5] flex-col overflow-hidden rounded-xl border-3 sm:border-4 bg-white shadow-md transition-all duration-150 active:scale-[0.98] ${
+                    className={`group relative flex h-full max-h-[58dvh] w-auto aspect-[3/4] sm:aspect-[4/5] flex-col overflow-hidden rounded-none shadow-none transition-all duration-150 active:scale-[0.98] ${
                       isSelected
-                        ? 'border-[#245443] ring-3 ring-[#88c983] shadow-xl'
-                        : 'border-[#c4dced] hover:border-[#7ca7c7]'
+                        ? 'border-3 sm:border-4 border-[#dc2626] bg-white ring-2 ring-[#dc2626]/30'
+                        : 'border-2 sm:border-3 border-[#b0c4d4] bg-white hover:border-[#86a8bf]'
                     }`}
                   >
-                    {/* Candidate Number Badge (Blue Box in Top-Left Corner like Image 3) */}
-                    <div className="absolute top-1.5 left-1.5 z-10 flex size-7 sm:size-9 items-center justify-center rounded-md bg-[#1976d2] font-serif text-sm sm:text-base font-black text-white shadow-md">
+                    {/* Candidate Number Badge (Kotak lancip tanpa shadow) */}
+                    <div className="absolute top-1.5 left-1.5 z-10 flex size-7 sm:size-9 items-center justify-center rounded-none bg-[#1976d2] font-sans text-sm sm:text-base font-black text-white shadow-none">
                       {parseInt(c.number, 10)}
                     </div>
 
-                    {/* SVG Checkmark badge when chosen */}
+                    {/* Red Checkmark badge when chosen */}
                     {isSelected && (
-                      <div className="absolute top-1.5 right-1.5 z-10 flex size-6 sm:size-8 items-center justify-center rounded-full bg-[#245443] text-white shadow-md">
+                      <div className="absolute top-1.5 right-1.5 z-30 flex size-6 sm:size-7 items-center justify-center rounded-none bg-[#dc2626] text-white shadow-none">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="size-3.5 sm:size-4"
+                          className="size-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -321,8 +315,8 @@ export function Ballot() {
                       </div>
                     )}
 
-                    {/* Candidate Photo */}
-                    <div className="relative flex-1 min-h-0 w-full bg-[#f4f8fb]">
+                    {/* Candidate Photo with Coblos Paku Overlay */}
+                    <div className="relative flex-1 min-h-0 w-full bg-[#f4f8fb] overflow-hidden">
                       <Image
                         src={c.photo}
                         alt={`Foto Calon ${c.name}`}
@@ -331,16 +325,32 @@ export function Ballot() {
                         className="object-contain p-1 sm:p-2"
                         priority
                       />
+
+                      {/* Animasi Gambar Coblos Paku ketika dipilih */}
+                      {isSelected && (
+                        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                          <div className="relative size-28 sm:size-36 animate-coblos">
+                            <Image
+                              src="/images/coblos-paku.png"
+                              alt="Tercoblos Paku"
+                              fill
+                              sizes="144px"
+                              className="object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
+                              priority
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Candidate Name Footer (Matching Image 3) */}
+                    {/* Candidate Name Footer (Merah saat dipilih, kotak lancip tanpa shadow) */}
                     <div
-                      className={`shrink-0 py-1.5 sm:py-2 text-center transition-colors ${
-                        isSelected ? 'bg-[#245443] text-white' : 'bg-white text-[#0f3148]'
+                      className={`shrink-0 py-1.5 sm:py-2 text-center transition-colors rounded-none ${
+                        isSelected ? 'bg-[#dc2626] text-white' : 'bg-white text-[#0f3148] border-t border-[#b0c4d4]'
                       }`}
                     >
                       <h3 className="text-xs sm:text-sm font-bold tracking-tight truncate px-2">{c.name}</h3>
-                      <p className={`text-[9px] sm:text-[10px] ${isSelected ? 'text-emerald-100' : 'text-[#567a94]'}`}>
+                      <p className={`text-[9px] sm:text-[10px] ${isSelected ? 'text-red-100' : 'text-[#567a94]'}`}>
                         Calon Kuwu No. Urut {c.number}
                       </p>
                     </div>
@@ -408,9 +418,9 @@ export function Ballot() {
                 </p>
               </div>
 
-              {/* Right Side: Candidate Photo Card (Matching Image 4) */}
-              <div className="shrink-0 overflow-hidden rounded-xl border-2 border-[#c5d8c3] bg-[#f5f8f3] p-1.5 text-center shadow-md">
-                <div className="relative size-24 sm:size-32 overflow-hidden rounded-lg bg-white">
+              {/* Right Side: Candidate Photo Card (Matching Image 4 with coblos paku mark) */}
+              <div className="shrink-0 overflow-hidden rounded-none border-2 border-[#dc2626] bg-[#fdf5f5] p-1.5 text-center shadow-none">
+                <div className="relative size-24 sm:size-32 overflow-hidden rounded-none bg-white">
                   <Image
                     src={candidate.photo}
                     alt={candidate.name}
@@ -418,9 +428,21 @@ export function Ballot() {
                     sizes="128px"
                     className="object-contain p-1"
                   />
+                  {/* Coblos Paku on preview */}
+                  <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                    <div className="relative size-20 sm:size-24">
+                      <Image
+                        src="/images/coblos-paku.png"
+                        alt="Tercoblos Paku"
+                        fill
+                        sizes="96px"
+                        className="object-contain drop-shadow-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="mt-1.5 text-center">
-                  <span className="block font-serif text-[11px] sm:text-xs font-bold text-[#183e30]">
+                  <span className="block font-sans text-[11px] sm:text-xs font-bold text-[#dc2626]">
                     Nomor {candidate.number}
                   </span>
                   <span className="block text-xs font-black text-[#143024] truncate max-w-[120px]">
