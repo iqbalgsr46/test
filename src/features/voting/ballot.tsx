@@ -310,15 +310,15 @@ export function Ballot() {
                         {parseInt(c.number, 10)}
                       </div>
 
-                      {/* Animasi Gambar Coblos Paku (Besar, tembus melebihi ukuran foto, titik coblos tepat di tengah foto) */}
+                      {/* Animasi Gambar Coblos Paku (Ukuran proporsional pas, titik coblos tepat di tengah foto) */}
                       {isSelected && (
                         <div className="pointer-events-none absolute inset-0 z-30 overflow-visible">
-                          <div className="absolute top-1/2 left-1/2 w-48 sm:w-64 aspect-[348/417] animate-coblos">
+                          <div className="absolute top-1/2 left-1/2 w-32 sm:w-40 aspect-[348/417] animate-coblos">
                             <Image
                               src="/images/coblos-paku.png"
                               alt="Tercoblos Paku"
                               fill
-                              sizes="256px"
+                              sizes="160px"
                               className="object-contain"
                               priority
                             />
@@ -403,24 +403,24 @@ export function Ballot() {
               </div>
 
               {/* Right Side: Candidate Photo Card (Matching Image 4 with coblos paku mark) */}
-              <div className="shrink-0 overflow-hidden rounded-none border-2 border-[#dc2626] bg-[#fdf5f5] p-1.5 text-center shadow-none">
-                <div className="relative size-24 sm:size-32 overflow-hidden rounded-none bg-white">
+              <div className="shrink-0 overflow-visible rounded-none border-0 bg-transparent p-1 text-center shadow-none">
+                <div className="relative size-24 sm:size-32 overflow-visible rounded-none bg-slate-100">
                   <Image
                     src={candidate.photo}
                     alt={candidate.name}
                     fill
                     sizes="128px"
-                    className="object-contain p-1"
+                    className="object-cover"
                   />
                   {/* Coblos Paku on preview */}
-                  <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-                    <div className="relative size-20 sm:size-24">
+                  <div className="pointer-events-none absolute inset-0 z-20 overflow-visible">
+                    <div className="absolute top-1/2 left-1/2 w-16 sm:w-20 aspect-[348/417] -translate-x-[30.4%] -translate-y-[77.8%]">
                       <Image
                         src="/images/coblos-paku.png"
                         alt="Tercoblos Paku"
                         fill
-                        sizes="96px"
-                        className="object-contain drop-shadow-sm"
+                        sizes="80px"
+                        className="object-contain"
                       />
                     </div>
                   </div>
