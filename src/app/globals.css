@@ -353,3 +353,25 @@ a {
   animation: phone-rotate 2.4s ease-in-out infinite alternate;
 }
 
+@keyframes scan-beam {
+  0% {
+    top: 6%;
+    opacity: 0.2;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 94%;
+    opacity: 0.2;
+  }
+}
+
+.animate-scan-beam {
+  animation: scan-beam 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+
+

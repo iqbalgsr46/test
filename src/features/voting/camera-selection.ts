@@ -268,3 +268,82 @@ export async function acquireCameraStream(
 
   throw lastError;
 }
+
+export interface CropRect {
+  sx: number;
+  sy: number;
+  sWidth: number;
+  sHeight: number;
+}
+
+export interface DomRectLike {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Calculates video source pixel crop coordinates corresponding to the on-screen
+ * viewfinder box, taking into account CSS object-cover scaling and centering.
+ */
+export function computeBoxCrop(
+  videoWidth: number,
+  videoHeight: number,
+  containerRect: DomRectLike,
+  boxRect: DomRectLike | null,
+): CropRect {
+  if (!boxRect || !videoWidth || !videoHeight || !containerRect.width || !containerRect.height) {
+    const size = Math.min(videoWidth, videoHeight) * 0.6;
+    return {
+      sx: Math.round((videoWidth - size) / 2),
+      sy: Math.round((videoHeight - size) / 2),
+      sWidth: Math.round(size),
+      sHeight: Math.round(size),
+    };
+  }
+
+  // Calculate object-cover scale and excess offsets
+  const scale = Math.max(containerRect.width / videoWidth, containerRect.height / videoHeight);
+  const renderedWidth = videoWidth * scale;
+  const renderedHeight = videoHeight * scale;
+  const excessX = (renderedWidth - containerRect.width) / 2;
+  const excessY = (renderedHeight - containerRect.height) / 2;
+
+  // Box coordinates relative to the rendered video element
+  const boxScreenX = boxRect.left - containerRect.left;
+  const boxScreenY = boxRect.top - containerRect.top;
+
+  // Map to original video source pixel coordinates
+  const rawX = (boxScreenX + excessX) / scale;
+  const rawY = (boxScreenY + excessY) / scale;
+  const rawW = boxRect.width / scale;
+  const rawH = boxRect.height / scale;
+
+  // 6% boundary margin so slightly edge-aligned QR codes still detect comfortably
+  const padX = rawW * 0.06;
+  const padY = rawH * 0.06;
+
+  const sx = Math.max(0, Math.round(rawX - padX));
+  const sy = Math.max(0, Math.round(rawY - padY));
+  const sWidth = Math.min(videoWidth - sx, Math.round(rawW + padX * 2));
+  const sHeight = Math.min(videoHeight - sy, Math.round(rawH + padY * 2));
+
+  return { sx, sy, sWidth, sHeight };
+}
+
+/**
+ * Convenience helper to calculate crop from live HTML elements.
+ */
+export function calculateViewfinderCrop(
+  videoElement: HTMLVideoElement,
+  viewfinderElement: HTMLElement | null,
+): CropRect {
+  const vw = videoElement.videoWidth || 640;
+  const vh = videoElement.videoHeight || 480;
+  const vRect = videoElement.getBoundingClientRect();
+  const boxRect = viewfinderElement ? viewfinderElement.getBoundingClientRect() : null;
+
+  return computeBoxCrop(vw, vh, vRect, boxRect);
+}
+

@@ -6,6 +6,7 @@ import { validateImage } from './qr-validation';
 import {
   acquireCameraStream,
   applyStandardZoomAndFocus,
+  calculateViewfinderCrop,
   discoverCameras,
   evaluateCamera,
   type CameraOption,
@@ -50,6 +51,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
   const [manualError, setManualError] = useState('');
 
   const video = useRef<HTMLVideoElement>(null);
+  const viewfinderRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const callback = useRef(onDecoded);
 
@@ -188,40 +190,57 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
           ) {
             lastScanTime = now;
 
-            // Step A: Native BarcodeDetector
-            if (barcodeDetector) {
-              try {
-                const barcodes = await barcodeDetector.detect(videoElement);
-                if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                  const raw = barcodes[0].rawValue.trim();
-                  if (raw) {
-                    scanning = false;
-                    stopTracks();
-                    setCameraActive(false);
-                    callback.current(raw);
-                    return;
-                  }
-                }
-              } catch {
-                // fall through to ZXing
-              }
+            // 1. Calculate the exact crop corresponding to the on-screen viewfinder box
+            const crop = calculateViewfinderCrop(videoElement, viewfinderRef.current);
+            const targetWidth = Math.min(crop.sWidth, 720);
+            const targetHeight = Math.min(crop.sHeight, 720);
+
+            if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+              canvas.width = targetWidth;
+              canvas.height = targetHeight;
             }
 
-            // Step B: ZXing BrowserQRCodeReader
-            if (scanning && !disposed) {
-              try {
-                if (!zxingReader) {
-                  const { BrowserQRCodeReader } = await import('@zxing/browser');
-                  zxingReader = new BrowserQRCodeReader();
+            if (ctx) {
+              // Draw strictly the viewfinder box area onto the canvas
+              ctx.drawImage(
+                videoElement,
+                crop.sx,
+                crop.sy,
+                crop.sWidth,
+                crop.sHeight,
+                0,
+                0,
+                targetWidth,
+                targetHeight,
+              );
+
+              // Step A: Native BarcodeDetector (scans only inside the reticle box)
+              if (barcodeDetector) {
+                try {
+                  const barcodes = await barcodeDetector.detect(canvas);
+                  if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                    const raw = barcodes[0].rawValue.trim();
+                    if (raw) {
+                      scanning = false;
+                      stopTracks();
+                      setCameraActive(false);
+                      callback.current(raw);
+                      return;
+                    }
+                  }
+                } catch {
+                  // fall through to ZXing
                 }
+              }
 
-                const width = videoElement.videoWidth || 640;
-                const height = videoElement.videoHeight || 480;
-                canvas.width = Math.min(width, 720);
-                canvas.height = Math.min(height, 720);
+              // Step B: ZXing BrowserQRCodeReader (scans only inside the reticle box)
+              if (scanning && !disposed) {
+                try {
+                  if (!zxingReader) {
+                    const { BrowserQRCodeReader } = await import('@zxing/browser');
+                    zxingReader = new BrowserQRCodeReader();
+                  }
 
-                if (ctx) {
-                  ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
                   const result = zxingReader.decodeFromCanvas(canvas);
                   if (result && result.getText()) {
                     const text = result.getText().trim();
@@ -233,9 +252,9 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
                       return;
                     }
                   }
+                } catch {
+                  // NotFoundException: keep scanning
                 }
-              } catch {
-                // NotFoundException: keep scanning
               }
             }
           }
@@ -352,17 +371,25 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
       {/* Top spacing */}
       <div className="relative z-30 pt-6" />
 
-      {/* Center Framing Guides: Pure White Reticle Corners, No Green, No Moving Laser, No Text */}
+      {/* Center Framing Guides: Pure White Reticle Corners & Animated White Scanning Beam */}
       <div className="relative z-20 flex flex-col items-center justify-center py-6">
-        <div className="relative size-[250px] sm:size-[320px]">
+        <div
+          ref={viewfinderRef}
+          className="relative size-[250px] sm:size-[320px] overflow-hidden rounded-lg"
+        >
           {/* Top-Left Corner Bracket (Pure White) */}
-          <div className="absolute top-0 left-0 size-11 border-t-[3.5px] border-l-[3.5px] border-white rounded-tl-sm shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+          <div className="pointer-events-none absolute top-0 left-0 z-20 size-11 border-t-[3.5px] border-l-[3.5px] border-white rounded-tl-sm shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
           {/* Top-Right Corner Bracket (Pure White) */}
-          <div className="absolute top-0 right-0 size-11 border-t-[3.5px] border-r-[3.5px] border-white rounded-tr-sm shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+          <div className="pointer-events-none absolute top-0 right-0 z-20 size-11 border-t-[3.5px] border-r-[3.5px] border-white rounded-tr-sm shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
           {/* Bottom-Left Corner Bracket (Pure White) */}
-          <div className="absolute bottom-0 left-0 size-11 border-b-[3.5px] border-l-[3.5px] border-white rounded-bl-sm shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+          <div className="pointer-events-none absolute bottom-0 left-0 z-20 size-11 border-b-[3.5px] border-l-[3.5px] border-white rounded-bl-sm shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
           {/* Bottom-Right Corner Bracket (Pure White) */}
-          <div className="absolute bottom-0 right-0 size-11 border-b-[3.5px] border-r-[3.5px] border-white rounded-br-sm shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+          <div className="pointer-events-none absolute bottom-0 right-0 z-20 size-11 border-b-[3.5px] border-r-[3.5px] border-white rounded-br-sm shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+
+          {/* Animated White Scanning Beam Line strictly inside the scan box */}
+          <div className="pointer-events-none absolute inset-x-2 z-10 h-[2.5px] -translate-y-1/2 rounded-full bg-white shadow-[0_0_10px_2px_rgba(255,255,255,0.95),0_0_20px_4px_rgba(255,255,255,0.5)] animate-scan-beam" />
+          {/* Subtle soft white laser vertical glow trail */}
+          <div className="pointer-events-none absolute inset-x-2 z-10 h-10 -translate-y-full bg-gradient-to-t from-white/20 via-white/5 to-transparent blur-[1px] animate-scan-beam" />
         </div>
 
         {/* Autoplay Blocked Banner */}
