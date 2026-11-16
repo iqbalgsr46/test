@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { useElection } from '@/features/election/election-provider';
 import { CANDIDATES, ELECTION } from '@/features/election/data';
 import { findVoterByQr } from '@/features/election/engine';
-import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
 import { QrScanner } from './qr-scanner';
 
@@ -18,7 +17,6 @@ export function Ballot() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [submittedReceiptId, setSubmittedReceiptId] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(45);
 
   const voter = state.voters.find((v) => v.id === voterId);
   const candidate = CANDIDATES.find((c) => c.id === candidateId);
@@ -29,19 +27,13 @@ export function Ballot() {
       (voter.stage === 'voted' || voter.stage === 'completed'),
   );
 
-  // Auto-reset countdown timer on the receipt screen
+  // Auto-return to scanner after 10 seconds behind the scenes
   useEffect(() => {
     if (!isVoted) return;
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          exit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
+    const timer = setTimeout(() => {
+      exit();
+    }, 10_000);
+    return () => clearTimeout(timer);
   }, [isVoted]);
 
   function handleScan(value: string) {
@@ -93,7 +85,6 @@ export function Ballot() {
         timestamp: new Date().toISOString(),
       });
       setSubmittedReceiptId(receiptId);
-      setCountdown(45);
       setCandidateId(null);
       setConfirmOpen(false);
     } catch (e) {
@@ -114,24 +105,9 @@ export function Ballot() {
 
   return (
     <div className="relative h-dvh max-h-dvh w-full overflow-hidden font-sans select-none">
-      {/* Discreet Top Navigation Bar for Admin & Identity (Badge hidden on camera screen) */}
-      {(!voter || isVoted) && (
-        <header
-          className={`absolute top-0 right-0 left-0 z-40 flex items-center px-5 py-3 pointer-events-none ${
-            isVoted ? 'justify-between' : 'justify-end'
-          }`}
-        >
-          {isVoted && (
-            <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 shadow-xs backdrop-blur-md">
-              <span className="flex size-6 items-center justify-center rounded-full bg-[#183e30] font-serif text-[11px] font-bold text-[#e5d4a4]">
-                ct
-              </span>
-              <span className="text-[11px] font-bold tracking-wider text-[#183e30]">
-                PILKADES {ELECTION.village.toUpperCase()}
-              </span>
-            </div>
-          )}
-
+      {/* Discreet Top Navigation Bar for Admin (only on camera scanner screen) */}
+      {!voter && (
+        <header className="absolute top-0 right-0 left-0 z-40 flex items-center justify-end px-5 py-3 pointer-events-none">
           <div className="pointer-events-auto flex items-center gap-2">
             <Link
               href="/admin"
@@ -179,65 +155,34 @@ export function Ballot() {
             </div>
           </div>
         ) : voter && isVoted ? (
-          /* ================= SCREEN 4: HALAMAN TERIMA KASIH (FULL SCREEN, TANPA QR CODE) ================= */
-          <div className="h-dvh max-h-dvh w-full overflow-hidden flex flex-col items-center justify-between bg-[#f4f8f3] p-4 sm:p-6 text-[#143024] select-none animate-fade-in">
-            {/* Top Emblem */}
-            <div className="shrink-0 flex items-center gap-2 pt-1">
-              <span className="flex size-6 sm:size-7 items-center justify-center rounded-full bg-[#183e30] font-serif text-[10px] sm:text-xs font-bold text-[#e5d4a4]">
-                ct
-              </span>
-              <span className="text-[11px] sm:text-xs font-bold tracking-widest uppercase text-[#183e30]">
-                PILKADES {ELECTION.village.toUpperCase()} · {ELECTION.tps}
-              </span>
-            </div>
-
-            {/* Center Content Box (Responsive to phone & tablet landscape) */}
-            <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center max-w-xl mx-auto px-4 my-auto">
-              {/* Checkmark Icon Badge */}
-              <div className="mb-2 sm:mb-4 flex size-12 sm:size-16 items-center justify-center rounded-full bg-[#245443] shadow-lg text-white">
+          /* ================= SCREEN 4: HALAMAN TERIMA KASIH (RINGKAS & CLEAN, AUTO 10 DETIK) ================= */
+          <div className="h-dvh max-h-dvh w-full overflow-hidden flex flex-col items-center justify-center bg-[#f4f8f3] px-4 text-[#143024] select-none animate-success-in">
+            <div className="flex flex-col items-center text-center max-w-lg mx-auto">
+              {/* Clean Checkmark Logo */}
+              <div className="flex size-20 sm:size-24 items-center justify-center rounded-full bg-[#1e7e4e] text-white shadow-xl ring-8 ring-[#e0f0dd] animate-check-pop">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="size-6 sm:size-8"
+                  className="size-10 sm:size-12"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <path d="M5 13l4 4L19 7" />
                 </svg>
               </div>
 
-              {/* Status Tag */}
-              <span className="inline-block rounded-full bg-[#e0f0dd] px-3.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold tracking-wider uppercase text-[#1c5630]">
+              {/* Suara Berhasil Disimpan */}
+              <p className="mt-5 sm:mt-6 text-xs sm:text-sm font-bold tracking-widest uppercase text-[#1e7e4e]">
                 Suara Berhasil Disimpan
-              </span>
-
-              {/* Main Title */}
-              <h1 className="mt-1.5 sm:mt-2 text-lg sm:text-3xl font-extrabold tracking-tight text-[#143024]">
-                Terima Kasih Telah Memilih
-              </h1>
-
-              {/* Subtitle / Voter acknowledgment */}
-              <p className="mt-1.5 sm:mt-2 text-[11px] sm:text-sm text-[#3b5344] leading-relaxed max-w-md">
-                Hak suara pemilih atas nama <strong className="font-bold text-[#143024]">{voter.name}</strong> telah
-                tercatat secara sah ke dalam sistem secara Langsung, Umum, Bebas, dan Rahasia (LUBER).
               </p>
 
-              {/* Physical Offline Instruction */}
-              <div className="mt-3 sm:mt-4 rounded-xl border border-[#cde0cb] bg-[#eef7ec] px-4 py-2 text-[10px] sm:text-xs text-[#294c34] leading-relaxed max-w-md">
-                Tahap akhir: Silakan keluar dari bilik suara dan celupkan salah satu jari tangan Anda ke dalam tinta pemilu pada meja petugas.
-              </div>
-            </div>
-
-            {/* Bottom Button (Auto countdown & button) */}
-            <div className="shrink-0 w-full max-w-md pb-2 text-center">
-              <Button
-                variant="primary"
-                onClick={exit}
-                className="w-full bg-[#183e30] py-2.5 sm:py-3.5 rounded-xl text-xs sm:text-base font-bold text-white shadow-md hover:bg-[#102d23] active:scale-[0.99]"
-              >
-                Selesai / Pemilih Berikutnya ({countdown}s)
-              </Button>
+              {/* Terima Kasih Telah Memilih */}
+              <h1 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight text-[#0f2e20]">
+                Terima Kasih Telah Memilih
+              </h1>
             </div>
           </div>
         ) : !voter ? (
@@ -386,7 +331,7 @@ export function Ballot() {
       {/* ================= SCREEN 3: CONFIRMATION MODAL (CLONING IMAGE 4, FITS LANDSCAPE SCREENS) ================= */}
       {confirmOpen && candidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg max-h-[95dvh] overflow-y-auto rounded-2xl bg-white p-4 sm:p-7 shadow-2xl">
+          <div className="relative w-full max-w-lg max-h-[95dvh] overflow-y-auto rounded-2xl bg-white p-4 sm:p-7 shadow-2xl animate-modal-pop">
             {/* Modal Content - Left Text + Right Photo Card Layout (Matching Image 4) */}
             <div className="flex flex-col-reverse items-center gap-4 sm:flex-row sm:items-start sm:justify-between">
               {/* Left Side: Title & Question */}
@@ -436,13 +381,13 @@ export function Ballot() {
               </div>
             </div>
 
-            {/* Bottom Actions: "Ulangi" and "Pilih" (Matching Image 4) */}
+            {/* Bottom Actions: "Ulangi" (Red button) and "Pilih" (Blue button) */}
             <div className="mt-5 flex items-center justify-between border-t border-[#e2ece0] pt-3">
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2 text-xs sm:text-sm font-semibold text-[#546b5a] transition hover:text-[#183e30] hover:underline"
+                className="rounded-xl bg-[#dc2626] hover:bg-[#b91c1c] active:scale-95 px-6 py-2.5 sm:px-7 sm:py-3 text-xs sm:text-sm font-bold text-white shadow-md transition disabled:opacity-50"
               >
                 Ulangi
               </button>

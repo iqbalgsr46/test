@@ -39,8 +39,11 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
   await expect(page.getByText('Konfirmasi Pemilihan')).toBeVisible();
   await expect(page.getByText('Apa Anda yakin akan memilih kandidat ini?')).toBeVisible();
 
-  // Test "Ulangi" button -> Closes modal
-  await page.getByRole('button', { name: 'Ulangi' }).click();
+  // Test "Ulangi" button (now a red button) -> Closes modal
+  const ulangiBtn = page.getByRole('button', { name: 'Ulangi' });
+  await expect(ulangiBtn).toBeVisible();
+  await expect(ulangiBtn).toHaveClass(/bg-\[#dc2626\]/);
+  await ulangiBtn.click();
   await expect(page.getByText('Konfirmasi Pemilihan')).not.toBeVisible();
 
   // Switch to Candidate 02
@@ -52,18 +55,19 @@ test('alir pemilihan bilik: full kamera scan QR -> surat suara calon -> tombol m
   // Confirm vote with "Pilih"
   await page.getByRole('button', { name: 'Pilih', exact: true }).click();
 
-  // 3. Success / Thank You screen (Full screen, no QR code)
+  // 3. Success / Thank You screen (Ringkas: only checkmark & two text lines)
   await expect(page.getByRole('heading', { name: 'Terima Kasih Telah Memilih' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Selesai/i })).toBeVisible();
+  await expect(page.getByText('Suara Berhasil Disimpan')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Selesai/i })).not.toBeVisible();
+  await expect(page.getByRole('link', { name: 'Admin' })).not.toBeVisible();
 
   // Verify storage
   const stored = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)!), key);
   expect(stored.voters[0].stage).toBe('voted');
   expect(stored.totals['candidate-02']).toBe(1);
 
-  // 4. Try scanning the same QR again -> rejected
-  await page.getByRole('button', { name: /Selesai/i }).click();
-  await expect(page.locator('video')).toBeVisible();
+  // 4. Auto-redirect back to scanner after 10 seconds behind the scenes
+  await expect(page.locator('video')).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole('button', { name: /Input Kode/i }).click();
   await page.getByPlaceholder('CT26-XXXXXX').fill(encodeInvitation(voter));
