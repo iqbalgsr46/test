@@ -3,6 +3,13 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import type { BrowserQRCodeReader } from '@zxing/browser';
 import { validateImage } from './qr-validation';
+import {
+  acquireCameraStream,
+  applyStandardZoomAndFocus,
+  discoverCameras,
+  evaluateCamera,
+  type CameraOption,
+} from './camera-selection';
 
 interface DetectedBarcode {
   rawValue: string;
@@ -30,136 +37,12 @@ interface QrScannerProps {
   }>;
 }
 
-// Find standard 1x main camera and strictly exclude ultrawide (0.5x) or macro sensors
-async function findStandardMainCamera(): Promise<string | undefined> {
-  if (!navigator.mediaDevices?.enumerateDevices) return undefined;
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoInputs = devices.filter((d) => d.kind === 'videoinput');
-    if (videoInputs.length <= 1) return videoInputs[0]?.deviceId;
-
-    const backCameras = videoInputs.filter((d) => {
-      const l = d.label.toLowerCase();
-      return (
-        l.includes('back') ||
-        l.includes('rear') ||
-        l.includes('environment') ||
-        l.includes('belakang') ||
-        l.includes('facing back') ||
-        l.includes('camera2 0') ||
-        l.includes('camera 0')
-      );
-    });
-
-    const isUltrawide = (label: string) =>
-      /ultra|0\.5|0\.6|wide-angle|wideangle|super|macro|depth|aux|tele/i.test(label);
-
-    // Priority 1: Explicitly labeled as main, primary, standard, or 1x
-    const mainCam = backCameras.find(
-      (d) => !isUltrawide(d.label) && /main|primary|1x|standard|normal/i.test(d.label),
-    );
-    if (mainCam) return mainCam.deviceId;
-
-    // Priority 2: Any back camera without ultrawide keywords
-    const standardCam = backCameras.find((d) => !isUltrawide(d.label));
-    if (standardCam) return standardCam.deviceId;
-
-    // Priority 3: First back camera (index 0 is standard 1x in Android HAL)
-    if (backCameras.length > 0) return backCameras[0].deviceId;
-  } catch {
-    // ignore
-  }
-  return undefined;
-}
-
-// Acquire media stream with crisp 1080p/720p clarity, strictly avoiding ultrawide
-async function acquireCameraStream(preferredFacing: 'environment' | 'user'): Promise<MediaStream> {
-  let targetDeviceId: string | undefined;
-  if (preferredFacing === 'environment') {
-    targetDeviceId = await findStandardMainCamera();
-  }
-
-  const attempts: MediaStreamConstraints[] = [
-    // 1. Crisp 1080p full HD on targeted standard main camera
-    targetDeviceId
-      ? {
-          video: {
-            deviceId: { exact: targetDeviceId },
-            width: { ideal: 1920, min: 1280 },
-            height: { ideal: 1080, min: 720 },
-          },
-          audio: false,
-        }
-      : {
-          video: {
-            facingMode: { ideal: preferredFacing },
-            width: { ideal: 1920, min: 1280 },
-            height: { ideal: 1080, min: 720 },
-          },
-          audio: false,
-        },
-    // 2. High-definition 720p fallback
-    {
-      video: {
-        facingMode: { ideal: preferredFacing },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-      audio: false,
-    },
-    // 3. Simple facingMode
-    {
-      video: { facingMode: preferredFacing },
-      audio: false,
-    },
-    // 4. Universal fallback
-    {
-      video: true,
-      audio: false,
-    },
-  ];
-
-  let lastError: unknown;
-  for (const constraints of attempts) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      // Apply 1x standard zoom and continuous autofocus if hardware exposes capabilities
-      const track = stream.getVideoTracks()[0];
-      if (track && track.getCapabilities) {
-        try {
-          const caps = track.getCapabilities() as {
-            zoom?: { min: number; max: number };
-            focusMode?: string[];
-          };
-          const adv: Record<string, unknown> = {};
-          if (caps?.zoom) {
-            adv.zoom = 1.0;
-          }
-          if (caps?.focusMode && caps.focusMode.includes('continuous')) {
-            adv.focusMode = 'continuous';
-          }
-          if (Object.keys(adv).length > 0) {
-            await track.applyConstraints({ advanced: [adv] });
-          }
-        } catch {
-          // ignore capability error
-        }
-      }
-
-      return stream;
-    } catch (err) {
-      lastError = err;
-    }
-  }
-  throw lastError;
-}
-
 export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
   const [cameraActive, setCameraActive] = useState(true);
   const [cameraError, setCameraError] = useState('');
-  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
-  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(undefined);
+  const [availableCameras, setAvailableCameras] = useState<CameraOption[]>([]);
+  const [cameraIndex, setCameraIndex] = useState(0);
   const [isAutoplayBlocked, setIsAutoplayBlocked] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -173,6 +56,31 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
   useEffect(() => {
     callback.current = onDecoded;
   }, [onDecoded]);
+
+  // Initial camera discovery: strictly prioritize standard 1x main camera, never ultrawide
+  useEffect(() => {
+    let cancelled = false;
+    async function initCameraList() {
+      const discovery = await discoverCameras();
+      if (cancelled) return;
+
+      const cameras =
+        discovery.backCameras.length > 0
+          ? discovery.backCameras
+          : discovery.allDevices.map((d, i) => evaluateCamera(d, i));
+
+      setAvailableCameras(cameras);
+      if (discovery.defaultCamera?.deviceId) {
+        setSelectedDeviceId(discovery.defaultCamera.deviceId);
+        setCameraIndex(0);
+      }
+    }
+
+    void initCameraList();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Camera Lifecycle & QR Scanning Loop
   useEffect(() => {
@@ -202,8 +110,24 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
           throw new Error('Perangkat atau browser ini tidak mendukung akses kamera.');
         }
 
-        // 1. Acquire MediaStream
-        const stream = await acquireCameraStream(facingMode);
+        // Determine target deviceId: use selectedDeviceId, or discover default standard camera immediately
+        let targetId = selectedDeviceId;
+        if (!targetId) {
+          const disc = await discoverCameras();
+          if (disposed) return;
+          if (disc.defaultCamera?.deviceId) {
+            targetId = disc.defaultCamera.deviceId;
+            setSelectedDeviceId(targetId);
+            const cameras =
+              disc.backCameras.length > 0
+                ? disc.backCameras
+                : disc.allDevices.map((d, i) => evaluateCamera(d, i));
+            setAvailableCameras(cameras);
+          }
+        }
+
+        // Acquire MediaStream ensuring standard 1x main camera and 1080p/720p clarity
+        const stream = await acquireCameraStream(targetId, 'environment');
         if (disposed) {
           stream.getTracks().forEach((t) => t.stop());
           return;
@@ -211,7 +135,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
 
         streamRef.current = stream;
 
-        // 2. Attach Stream to Video Element with mobile-safe attributes
+        // Attach Stream to Video Element with mobile-safe attributes
         if (videoElement) {
           videoElement.srcObject = stream;
           videoElement.playsInline = true;
@@ -224,22 +148,15 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
           } catch {
             setIsAutoplayBlocked(true);
           }
-        }
 
-        // 3. Check for multiple camera devices safely after stream is granted
-        try {
-          if (navigator.mediaDevices?.enumerateDevices) {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoInputs = devices.filter((d) => d.kind === 'videoinput');
-            if (videoInputs.length > 1) {
-              setHasMultipleCameras(true);
-            }
+          // Reinforce standard 1x optical zoom on track once video is playing
+          const track = stream.getVideoTracks()[0];
+          if (track) {
+            void applyStandardZoomAndFocus(track);
           }
-        } catch {
-          // ignore device listing error
         }
 
-        // 4. Initialize Scanner Engine
+        // Initialize Scanner Engine: Native BarcodeDetector (Chrome Android HW accelerated)
         if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
           try {
             const win = window as unknown as WindowWithBarcodeDetector;
@@ -262,7 +179,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
           if (!scanning || disposed || !cameraActive) return;
 
           const now = performance.now();
-          // Scan every ~160ms for silky smooth UI and battery efficiency
+          // Scan every ~160ms for smooth UI and battery efficiency
           if (
             now - lastScanTime >= 160 &&
             videoElement &&
@@ -271,7 +188,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
           ) {
             lastScanTime = now;
 
-            // Step A: Native BarcodeDetector (Chrome Android hardware accelerated)
+            // Step A: Native BarcodeDetector
             if (barcodeDetector) {
               try {
                 const barcodes = await barcodeDetector.detect(videoElement);
@@ -354,7 +271,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
       }
       stopTracks();
     };
-  }, [cameraActive, facingMode]);
+  }, [cameraActive, selectedDeviceId]);
 
   async function handleResumePlay() {
     if (video.current) {
@@ -410,8 +327,11 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
     onDecoded(code.trim());
   }
 
-  function toggleCameraFlip() {
-    setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
+  function cycleCamera() {
+    if (availableCameras.length <= 1) return;
+    const nextIdx = (cameraIndex + 1) % availableCameras.length;
+    setCameraIndex(nextIdx);
+    setSelectedDeviceId(availableCameras[nextIdx].deviceId);
   }
 
   return (
@@ -491,12 +411,12 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
       <div className="relative z-30 mb-6 flex w-full max-w-md flex-col items-center px-4">
         {/* White Minimalist Action Buttons */}
         <div className="flex items-center justify-center gap-3">
-          {hasMultipleCameras && (
+          {availableCameras.length > 1 && (
             <button
               type="button"
-              onClick={toggleCameraFlip}
+              onClick={cycleCamera}
               aria-label="Ganti Kamera"
-              title="Ganti kamera depan/belakang"
+              title="Ganti ke lensa kamera lain"
               className="flex size-11 items-center justify-center rounded-full border border-white/40 bg-black/40 text-white shadow-lg backdrop-blur-md transition hover:bg-black/60 hover:border-white active:scale-95"
             >
               <svg
