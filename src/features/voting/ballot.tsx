@@ -114,17 +114,23 @@ export function Ballot() {
 
   return (
     <div className="relative h-dvh max-h-dvh w-full overflow-hidden font-sans select-none">
-      {/* Discreet Top Navigation Bar for Admin & Identity (Only on scan & completion) */}
+      {/* Discreet Top Navigation Bar for Admin & Identity (Badge hidden on camera screen) */}
       {(!voter || isVoted) && (
-        <header className="absolute top-0 right-0 left-0 z-40 flex items-center justify-between px-5 py-3 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 shadow-xs backdrop-blur-md">
-            <span className="flex size-6 items-center justify-center rounded-full bg-[#183e30] font-serif text-[11px] font-bold text-[#e5d4a4]">
-              ct
-            </span>
-            <span className="text-[11px] font-bold tracking-wider text-[#183e30]">
-              PILKADES {ELECTION.village.toUpperCase()}
-            </span>
-          </div>
+        <header
+          className={`absolute top-0 right-0 left-0 z-40 flex items-center px-5 py-3 pointer-events-none ${
+            isVoted ? 'justify-between' : 'justify-end'
+          }`}
+        >
+          {isVoted && (
+            <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 py-1.5 shadow-xs backdrop-blur-md">
+              <span className="flex size-6 items-center justify-center rounded-full bg-[#183e30] font-serif text-[11px] font-bold text-[#e5d4a4]">
+                ct
+              </span>
+              <span className="text-[11px] font-bold tracking-wider text-[#183e30]">
+                PILKADES {ELECTION.village.toUpperCase()}
+              </span>
+            </div>
+          )}
 
           <div className="pointer-events-auto flex items-center gap-2">
             <Link
