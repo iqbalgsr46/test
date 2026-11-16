@@ -277,8 +277,8 @@ export function Ballot() {
               </p>
             </div>
 
-            {/* Candidate Row (Kotak lancip tanpa shadow, warna merah saat dipilih, animasi coblos paku) */}
-            <div className="flex-1 min-h-0 w-full flex items-center justify-center gap-3 sm:gap-6 px-2 my-1 sm:my-2">
+            {/* Candidate Row (Foto full kotak, tanpa shadow & border, teks nama dibawah, coblos paku besar menonjol keluar) */}
+            <div className="flex-1 min-h-0 w-full flex items-center justify-center gap-4 sm:gap-8 px-2 my-1 sm:my-2 overflow-visible">
               {CANDIDATES.map((c) => {
                 const isSelected = candidateId === c.id;
                 return (
@@ -288,54 +288,38 @@ export function Ballot() {
                     aria-label={`Pilih Calon Nomor ${c.number} ${c.name}`}
                     aria-pressed={isSelected}
                     onClick={() => setCandidateId(c.id)}
-                    className={`group relative flex h-full max-h-[58dvh] w-auto aspect-[3/4] sm:aspect-[4/5] flex-col overflow-hidden rounded-none shadow-none transition-all duration-150 active:scale-[0.98] ${
-                      isSelected
-                        ? 'border-3 sm:border-4 border-[#dc2626] bg-white ring-2 ring-[#dc2626]/30'
-                        : 'border-2 sm:border-3 border-[#b0c4d4] bg-white hover:border-[#86a8bf]'
-                    }`}
+                    className="group relative flex h-full max-h-[58dvh] w-auto aspect-[3/4] sm:aspect-[4/5] flex-col overflow-visible rounded-none border-0 shadow-none bg-transparent transition-transform active:scale-[0.98]"
                   >
-                    {/* Candidate Number Badge (Kotak lancip tanpa shadow) */}
-                    <div className="absolute top-1.5 left-1.5 z-10 flex size-7 sm:size-9 items-center justify-center rounded-none bg-[#1976d2] font-sans text-sm sm:text-base font-black text-white shadow-none">
-                      {parseInt(c.number, 10)}
-                    </div>
-
-                    {/* Red Checkmark badge when chosen */}
-                    {isSelected && (
-                      <div className="absolute top-1.5 right-1.5 z-30 flex size-6 sm:size-7 items-center justify-center rounded-none bg-[#dc2626] text-white shadow-none">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="size-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={3}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    )}
-
-                    {/* Candidate Photo with Coblos Paku Overlay */}
-                    <div className="relative flex-1 min-h-0 w-full bg-[#f4f8fb] overflow-hidden">
+                    {/* Candidate Photo Box (Full foto tanpa padding/border/shadow, overflow-visible untuk paku) */}
+                    <div className="relative flex-1 min-h-0 w-full overflow-visible bg-slate-200">
                       <Image
                         src={c.photo}
                         alt={`Foto Calon ${c.name}`}
                         fill
                         sizes="(max-width: 768px) 45vw, 320px"
-                        className="object-contain p-1 sm:p-2"
+                        className="object-cover"
                         priority
                       />
 
-                      {/* Animasi Gambar Coblos Paku ketika dipilih */}
+                      {/* Candidate Number Badge (Pojok kiri atas, tajam dan clean) */}
+                      <div
+                        className={`absolute top-0 left-0 z-10 flex size-7 sm:size-9 items-center justify-center font-sans text-sm sm:text-base font-black text-white transition-colors ${
+                          isSelected ? 'bg-[#dc2626]' : 'bg-[#1976d2]'
+                        }`}
+                      >
+                        {parseInt(c.number, 10)}
+                      </div>
+
+                      {/* Animasi Gambar Coblos Paku (Besar, tembus melebihi ukuran foto, titik coblos tepat di tengah foto) */}
                       {isSelected && (
-                        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-                          <div className="relative size-28 sm:size-36 animate-coblos">
+                        <div className="pointer-events-none absolute inset-0 z-30 overflow-visible">
+                          <div className="absolute top-1/2 left-1/2 w-48 sm:w-64 aspect-[348/417] animate-coblos">
                             <Image
                               src="/images/coblos-paku.png"
                               alt="Tercoblos Paku"
                               fill
-                              sizes="144px"
-                              className="object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
+                              sizes="256px"
+                              className="object-contain"
                               priority
                             />
                           </div>
@@ -343,14 +327,14 @@ export function Ballot() {
                       )}
                     </div>
 
-                    {/* Candidate Name Footer (Merah saat dipilih, kotak lancip tanpa shadow) */}
+                    {/* Candidate Name Footer (Tepat dibawah kotak foto, merah saat dipilih) */}
                     <div
-                      className={`shrink-0 py-1.5 sm:py-2 text-center transition-colors rounded-none ${
-                        isSelected ? 'bg-[#dc2626] text-white' : 'bg-white text-[#0f3148] border-t border-[#b0c4d4]'
+                      className={`shrink-0 py-2 sm:py-2.5 text-center transition-colors rounded-none ${
+                        isSelected ? 'bg-[#dc2626] text-white' : 'bg-white text-[#0f3148]'
                       }`}
                     >
                       <h3 className="text-xs sm:text-sm font-bold tracking-tight truncate px-2">{c.name}</h3>
-                      <p className={`text-[9px] sm:text-[10px] ${isSelected ? 'text-red-100' : 'text-[#567a94]'}`}>
+                      <p className={`text-[9px] sm:text-[10px] font-semibold ${isSelected ? 'text-red-100' : 'text-[#567a94]'}`}>
                         Calon Kuwu No. Urut {c.number}
                       </p>
                     </div>

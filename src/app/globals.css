@@ -376,25 +376,26 @@ a {
 
 @keyframes coblos-strike {
   0% {
-    transform: scale(1.6) translate(28px, -45px) rotate(8deg);
+    transform: translate(-30.4%, -77.8%) scale(1.6) translate(35px, -50px) rotate(8deg);
     opacity: 0;
   }
-  45% {
-    transform: scale(0.92) translate(-2px, 3px) rotate(-2deg);
+  50% {
+    transform: translate(-30.4%, -77.8%) scale(0.95) translate(-2px, 3px) rotate(-1deg);
     opacity: 1;
   }
-  75% {
-    transform: scale(1.04) translate(1px, -1px) rotate(1deg);
+  80% {
+    transform: translate(-30.4%, -77.8%) scale(1.03) translate(0, -1px);
     opacity: 1;
   }
   100% {
-    transform: scale(1) translate(0, 0) rotate(0deg);
+    transform: translate(-30.4%, -77.8%) scale(1) translate(0, 0) rotate(0deg);
     opacity: 1;
   }
 }
 
 .animate-coblos {
-  animation: coblos-strike 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: coblos-strike 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: 30.4% 77.8%;
 }
 
 
