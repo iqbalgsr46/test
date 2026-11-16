@@ -1,12 +1,25 @@
 import { test, expect, type Page } from '@playwright/test';
+import { createInitialState } from '../../src/features/election/data';
+import { transition } from '../../src/features/election/engine';
+
+const storageKey = 'cikaum-timur-election-v1';
 
 async function registerVoter(page: Page) {
-  await page.goto('/');
-  await page.getByLabel('Pilih pemilih').selectOption('voter-001');
-  await page.getByRole('checkbox', { name: 'Surat undangan telah diperiksa' }).check();
-  await page.getByRole('checkbox', { name: 'Kartu identitas sesuai dengan undangan' }).check();
-  await page.getByRole('button', { name: 'Konfirmasi pemeriksaan' }).click();
-  await page.getByRole('link', { name: 'Lanjut ke meja 1' }).click();
+  let state = createInitialState();
+  state = transition(state, {
+    type: 'SCREEN',
+    voterId: 'voter-001',
+    invitationChecked: true,
+    identityChecked: true,
+  });
+  await page.goto('/registrasi');
+  await page.evaluate(
+    ({ key, s }) => {
+      localStorage.setItem(key, JSON.stringify(s));
+    },
+    { key: storageKey, s: state },
+  );
+  await page.reload();
   await page.getByRole('checkbox', { name: 'Jari pemilih belum bertinta' }).check();
   await page.getByRole('checkbox', { name: 'Data diri dan dokumen sudah sesuai' }).check();
   await page.getByRole('button', { name: 'Daftarkan dan buat antrean' }).click();

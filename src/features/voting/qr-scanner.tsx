@@ -313,6 +313,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
     const problem = validateImage(file);
     if (problem) {
       setManualError(problem);
+      setShowManual(true);
       return;
     }
 
@@ -333,6 +334,7 @@ export function QrScanner({ onDecoded, demoVoters = [] }: QrScannerProps) {
       setManualError(
         'Kode QR tidak terbaca pada gambar. Pastikan foto jelas atau ketik kode manual.',
       );
+      setShowManual(true);
     } finally {
       URL.revokeObjectURL(url);
       setBusy(false);

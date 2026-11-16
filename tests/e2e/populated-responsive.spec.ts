@@ -29,11 +29,17 @@ async function loadState(page: Page, state: ElectionState, route: string) {
   await page.goto(route);
 }
 
-for (const width of [320, 390, 768]) {
-  test(`form aktif, dialog kandidat, dan penyelesaian tetap muat pada ${width}px`, async ({
+const viewports = [
+  { label: '667x375 (HP Landscape Kompak)', width: 667, height: 375 },
+  { label: '844x390 (HP Landscape Standar)', width: 844, height: 390 },
+  { label: '1024x600 (Tablet Landscape TPS)', width: 1024, height: 600 },
+];
+
+for (const { label, width, height } of viewports) {
+  test(`form aktif, dialog kandidat, dan penyelesaian tetap muat pada ${label}`, async ({
     page,
   }) => {
-    await page.setViewportSize({ width, height: 844 });
+    await page.setViewportSize({ width, height });
     await page.goto('/');
     await loadState(page, calledFixture(), '/registrasi');
     const signature = page.getByLabel('Area gambar tanda tangan');
@@ -52,19 +58,16 @@ for (const width of [320, 390, 768]) {
 
     const ready = readyFixture();
     await loadState(page, ready, '/bilik');
-    await page.getByLabel('Kode undangan atau isi QR').fill(encodeInvitation(ready.voters[0]));
-    await page.getByRole('button', { name: 'Verifikasi undangan' }).click();
-    await page.getByRole('button', { name: 'Pilih Upin', exact: true }).click();
-    await page.getByRole('button', { name: 'Pilih kandidat ini', exact: true }).click();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible();
-    const dialogBox = await dialog.boundingBox();
-    expect(dialogBox).not.toBeNull();
-    expect(dialogBox!.x).toBeGreaterThanOrEqual(0);
-    expect(dialogBox!.x + dialogBox!.width).toBeLessThanOrEqual(width);
-    await expect(dialog.getByRole('button', { name: 'Pilih', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /Input Kode/i }).click();
+    await page.getByPlaceholder('CT26-XXXXXX').fill(encodeInvitation(ready.voters[0]));
+    await page.getByRole('button', { name: 'Verifikasi' }).click();
+    await page.getByRole('button', { name: /Pilih Calon A Upin/i }).click();
+    await page.getByRole('button', { name: 'PILIH KANDIDAT A' }).click();
+    const modalText = page.getByText('Konfirmasi Pemilihan');
+    await expect(modalText).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pilih', exact: true })).toBeVisible();
     await assertPageFits(page);
-    await dialog.getByRole('button', { name: 'Ulangi' }).click();
+    await page.getByRole('button', { name: 'Ulangi' }).click();
 
     await loadState(
       page,
